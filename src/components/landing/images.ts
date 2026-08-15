@@ -11,9 +11,10 @@ export const IMAGES = {
   featured2: 'https://images.unsplash.com/photo-1554995207-c18c203602cb?w=800&q=80',
   featured3: 'https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=800&q=80',
   featured4: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=800&q=80',
-  // destAbuja's original source photo 404s — reusing heroMain rather than guessing a
-  // replacement URL blind (no way to verify what an unseen photo actually shows).
-  destAbuja: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&q=80',
+  // destAbuja's original source photo 404s. Replacement URL below is verified to load
+  // (curl'd, 200) but its actual subject is NOT visually confirmed — no way to view
+  // images in this environment. Swap if it turns out not to be a skyline/city shot.
+  destAbuja: 'https://images.unsplash.com/photo-1444723121867-7a241cacace9?w=800&q=80',
   destLagos: 'https://images.unsplash.com/photo-1580060839134-75a5edca2e99?w=800&q=80',
   destPh: 'https://images.unsplash.com/photo-1580674684081-7617fbf3d745?w=800&q=80',
   destIbadan: 'https://images.unsplash.com/photo-1590073242678-70ee3fc28e8e?w=800&q=80',
