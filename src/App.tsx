@@ -4,6 +4,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 
 import LandingPage         from './pages/LandingPage'
 import LoginPage           from './pages/LoginPage'
+import RegisterPage        from './pages/RegisterPage'
 import DiscoverPage        from './pages/DiscoverPage'
 import PropertyDetailPage  from './pages/PropertyDetailPage'
 import BookingPage         from './pages/BookingPage'
@@ -31,6 +32,7 @@ export default function App() {
           {/* Public / guest */}
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
           <Route path="/properties" element={<DiscoverPage />} />
           <Route path="/properties/:slug" element={<PropertyDetailPage />} />
           <Route path="/properties/:slug/book" element={<BookingPage />} />

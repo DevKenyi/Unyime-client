@@ -1,13 +1,26 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Home, ClipboardList, Wallet, ShieldAlert, ArrowRight } from 'lucide-react'
+import { Home, ClipboardList, Wallet, ShieldAlert, ArrowRight, TrendingUp } from 'lucide-react'
 import DashboardLayout from '../../components/DashboardLayout'
+import StatTile from '../../components/StatTile'
+import TrendChart from '../../components/charts/TrendChart'
 import api from '../../api/axios'
-import type { Booking, HostEarningsSummary, KycStatusInfo, Property } from '../../types'
+import { groupSumByDay } from '../../utils/chartData'
+import type { Booking, EarningsTransaction, HostEarningsSummary, KycStatusInfo, Property } from '../../types'
+
+function timeAgo(dateStr: string) {
+  const diffMs = Date.now() - new Date(dateStr).getTime()
+  const days = Math.floor(diffMs / 86_400_000)
+  if (days === 0) return 'Today'
+  if (days === 1) return 'Yesterday'
+  if (days < 7) return `${days} days ago`
+  return new Date(dateStr).toLocaleDateString('en-NG', { month: 'short', day: 'numeric' })
+}
 
 export default function HostDashboard() {
   const [properties, setProperties] = useState<Property[]>([])
   const [bookings, setBookings] = useState<Booking[]>([])
+  const [transactions, setTransactions] = useState<EarningsTransaction[]>([])
   const [earnings, setEarnings] = useState<HostEarningsSummary | null>(null)
   const [kyc, setKyc] = useState<KycStatusInfo | null>(null)
   const [loading, setLoading] = useState(true)
@@ -16,12 +29,14 @@ export default function HostDashboard() {
     Promise.all([
       api.get<Property[]>('/api/host/properties'),
       api.get<Booking[]>('/api/host/bookings'),
+      api.get<EarningsTransaction[]>('/api/host/earnings/transactions'),
       api.get<HostEarningsSummary>('/api/host/earnings'),
       api.get<KycStatusInfo>('/api/host/kyc'),
     ])
-      .then(([p, b, e, k]) => {
+      .then(([p, b, t, e, k]) => {
         setProperties(p.data)
         setBookings(b.data)
+        setTransactions(t.data)
         setEarnings(e.data)
         setKyc(k.data)
       })
@@ -29,6 +44,14 @@ export default function HostDashboard() {
   }, [])
 
   const upcoming = bookings.filter(b => b.status === 'CONFIRMED' || b.status === 'CHECKED_IN').length
+  const recentBookings = useMemo(
+    () => [...bookings].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 6),
+    [bookings]
+  )
+  const earningsTrend = useMemo(
+    () => groupSumByDay(transactions, t => t.date, t => t.amount, 14),
+    [transactions]
+  )
 
   return (
     <DashboardLayout>
@@ -65,12 +88,23 @@ export default function HostDashboard() {
             )}
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
-              <StatCard icon={<Home size={18} />} label="Properties" value={properties.length} to="/host/properties" />
-              <StatCard icon={<ClipboardList size={18} />} label="Upcoming bookings" value={upcoming} to="/host/bookings" />
-              <StatCard
-                icon={<Wallet size={18} />} label="Available balance"
-                value={`₦${(earnings?.availableBalance ?? 0).toLocaleString()}`} to="/host/earnings"
-              />
+              <Link to="/host/properties" style={{ textDecoration: 'none' }}>
+                <StatTile icon={<Home size={16} />} label="Properties" value={properties.length} />
+              </Link>
+              <Link to="/host/bookings" style={{ textDecoration: 'none' }}>
+                <StatTile icon={<ClipboardList size={16} />} label="Upcoming bookings" value={upcoming} />
+              </Link>
+              <Link to="/host/earnings" style={{ textDecoration: 'none' }}>
+                <StatTile icon={<Wallet size={16} />} label="Available balance" value={`₦${(earnings?.availableBalance ?? 0).toLocaleString()}`} accent />
+              </Link>
+            </div>
+
+            <div className="surface-card" style={{ padding: 20 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                <TrendingUp size={16} color="#095C46" />
+                <h2 style={{ fontSize: 15, fontWeight: 700, color: '#111827', margin: 0 }}>Earnings, last 14 days</h2>
+              </div>
+              <TrendChart data={earningsTrend} formatValue={v => `₦${v.toLocaleString()}`} />
             </div>
 
             <div className="surface-card" style={{ padding: 20 }}>
@@ -80,12 +114,21 @@ export default function HostDashboard() {
                   View all <ArrowRight size={13} />
                 </Link>
               </div>
-              {bookings.length === 0 && <p style={{ fontSize: 13.5, color: '#6B7280' }}>No bookings yet.</p>}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {bookings.slice(0, 5).map(b => (
-                  <div key={b.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13.5, padding: '8px 0', borderBottom: '1px solid #F3F4F6' }}>
-                    <span style={{ color: '#111827', fontWeight: 500 }}>{b.propertyTitle}</span>
-                    <span style={{ color: '#6B7280' }}>{b.guestName} · {b.status}</span>
+              {recentBookings.length === 0 && <p style={{ fontSize: 13.5, color: '#6B7280' }}>No bookings yet.</p>}
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                {recentBookings.map(b => (
+                  <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid #F3F4F6' }}>
+                    <div style={{
+                      width: 34, height: 34, borderRadius: '50%', background: '#E8F5F1', color: '#095C46',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13, flexShrink: 0,
+                    }}>
+                      {b.guestName[0]?.toUpperCase()}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontSize: 13.5, fontWeight: 600, color: '#111827', margin: 0 }}>{b.guestName}</p>
+                      <p style={{ fontSize: 12.5, color: '#9CA3AF', margin: '1px 0 0' }}>{b.propertyTitle}</p>
+                    </div>
+                    <span style={{ fontSize: 12, color: '#9CA3AF', flexShrink: 0 }}>{timeAgo(b.createdAt)}</span>
                   </div>
                 ))}
               </div>
@@ -94,17 +137,5 @@ export default function HostDashboard() {
         )}
       </div>
     </DashboardLayout>
-  )
-}
-
-function StatCard({ icon, label, value, to }: { icon: React.ReactNode; label: string; value: string | number; to: string }) {
-  return (
-    <Link to={to} className="surface-card" style={{ padding: 18, textDecoration: 'none', display: 'block' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#095C46', marginBottom: 10 }}>
-        {icon}
-        <span style={{ fontSize: 13, fontWeight: 600, color: '#6B7280' }}>{label}</span>
-      </div>
-      <p style={{ fontSize: 24, fontWeight: 800, color: '#111827', margin: 0 }}>{value}</p>
-    </Link>
   )
 }

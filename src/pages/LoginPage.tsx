@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import api from '../api/axios'
 import type { AuthUser } from '../types'
@@ -188,9 +188,9 @@ export default function LoginPage() {
 
           <p style={{ textAlign: 'center', fontSize: 14, color: '#6B7280', marginTop: 18, marginBottom: 0 }}>
             New to Unyimi?{' '}
-            <a href="#" style={{ color: '#095C46', fontWeight: 600, textDecoration: 'none' }}>
+            <Link to="/register" style={{ color: '#095C46', fontWeight: 600, textDecoration: 'none' }}>
               Create an account
-            </a>
+            </Link>
           </p>
         </form>
       </div>
