@@ -4,14 +4,13 @@ import type { Property } from '../../types'
 import PropertyGrid from './PropertyGrid'
 import ShowcaseCard from './ShowcaseCard'
 import Reveal from './Reveal'
+import { IMAGES } from './images'
 
 const SAMPLE_STAYS = [
-  { variant: 'apartment-living' as const, title: 'Modern 2 Bedroom Apartment', location: 'Maitama, Abuja', rating: '4.9', price: '₦85,000' },
-  { variant: 'apartment-bedroom' as const, title: 'Cozy Studio with City Views', location: 'Lekki, Lagos', rating: '4.8', price: '₦45,000' },
-  { variant: 'apartment-kitchen' as const, title: 'Luxury 3 Bedroom Short-let', location: 'Wuse II, Abuja', rating: '5.0', price: '₦120,000' },
-  { variant: 'pool' as const, title: 'Serene Poolside Apartment', location: 'Ikoyi, Lagos', rating: '4.9', price: '₦150,000' },
-  { variant: 'apartment-exterior' as const, title: 'Minimalist Garden Flat', location: 'Old GRA, Port Harcourt', rating: '4.7', price: '₦55,000' },
-  { variant: 'host-welcome' as const, title: 'Bright Family Duplex', location: 'Independence Layout, Enugu', rating: '4.8', price: '₦70,000' },
+  { variant: 'apartment-living' as const, src: IMAGES.featured1, title: 'Modern 2 Bedroom Apartment', location: 'Maitama, Abuja', rating: '4.9', price: '₦85,000' },
+  { variant: 'apartment-bedroom' as const, src: IMAGES.featured2, title: 'Luxury Short-let Studio', location: 'Ikoyi, Lagos', rating: '4.8', price: '₦65,000' },
+  { variant: 'apartment-kitchen' as const, src: IMAGES.featured3, title: 'Beautiful 3 Bedroom Duplex', location: 'GRA, Port Harcourt', rating: '5.0', price: '₦120,000' },
+  { variant: 'pool' as const, src: IMAGES.featured4, title: 'Cozy 1 Bedroom Flat', location: 'Bodija, Ibadan', rating: '4.7', price: '₦45,000' },
 ]
 
 export default function FeaturedStays() {
@@ -43,7 +42,7 @@ export default function FeaturedStays() {
           {properties.length > 0 ? (
             <PropertyGrid properties={properties} />
           ) : (
-            <div className="grid-3">
+            <div className="grid-4">
               {SAMPLE_STAYS.map(stay => <ShowcaseCard key={stay.title} {...stay} />)}
             </div>
           )}

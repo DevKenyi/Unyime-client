@@ -5,10 +5,11 @@ interface Props {
   city: string
   descriptor: string
   variant: ImageVariant
+  src?: string
   tall?: boolean
 }
 
-export default function DestinationCard({ city, descriptor, variant, tall }: Props) {
+export default function DestinationCard({ city, descriptor, variant, src, tall }: Props) {
   return (
     <Link
       to={`/properties?city=${encodeURIComponent(city)}`}
@@ -18,7 +19,7 @@ export default function DestinationCard({ city, descriptor, variant, tall }: Pro
         height: tall ? 360 : 240, textDecoration: 'none',
       }}
     >
-      <PlaceholderImage variant={variant} alt={city} className="media-zoom__img" style={{ height: '100%' }} />
+      <PlaceholderImage variant={variant} src={src} alt={city} className="media-zoom__img" style={{ height: '100%' }} />
       <div style={{
         position: 'absolute', inset: 0,
         background: 'linear-gradient(180deg, rgba(0,0,0,0) 40%, rgba(0,0,0,0.55) 100%)',

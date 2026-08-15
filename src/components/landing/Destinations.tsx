@@ -1,12 +1,13 @@
 import DestinationCard from './DestinationCard'
 import Reveal from './Reveal'
+import { IMAGES } from './images'
 
 const DESTINATIONS = [
-  { city: 'Abuja', descriptor: 'Modern stays in the heart of the capital', variant: 'skyline-abuja' as const, tall: true },
-  { city: 'Lagos', descriptor: 'Coastal energy meets city living', variant: 'skyline-lagos' as const, tall: true },
-  { city: 'Port Harcourt', descriptor: 'Riverside comfort and warm hospitality', variant: 'apartment-exterior' as const },
-  { city: 'Ibadan', descriptor: 'Historic charm, modern comfort', variant: 'apartment-living' as const },
-  { city: 'Enugu', descriptor: 'Hilltop views and quiet stays', variant: 'apartment-bedroom' as const },
+  { city: 'Abuja', descriptor: 'Modern stays in the heart of the capital', variant: 'skyline-abuja' as const, src: IMAGES.destAbuja, tall: true },
+  { city: 'Lagos', descriptor: 'Coastal energy meets city living', variant: 'skyline-lagos' as const, src: IMAGES.destLagos, tall: true },
+  { city: 'Port Harcourt', descriptor: 'Riverside comfort and warm hospitality', variant: 'apartment-exterior' as const, src: IMAGES.destPh },
+  { city: 'Ibadan', descriptor: 'Historic charm, modern comfort', variant: 'apartment-living' as const, src: IMAGES.destIbadan },
+  { city: 'Enugu', descriptor: 'Hilltop views and quiet stays', variant: 'apartment-bedroom' as const, src: IMAGES.destEnugu },
 ]
 
 export default function Destinations() {

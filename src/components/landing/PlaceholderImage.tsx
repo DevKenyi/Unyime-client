@@ -1,4 +1,4 @@
-import { cloneElement, isValidElement, type CSSProperties, type ReactElement, type ReactNode } from 'react'
+import { cloneElement, isValidElement, useState, type CSSProperties, type ReactElement, type ReactNode } from 'react'
 import { Home, Sofa, BedDouble, Building2, Users, DoorOpen, UtensilsCrossed, Waves } from 'lucide-react'
 
 export type ImageVariant =
@@ -29,18 +29,11 @@ interface Props {
   children?: ReactNode
 }
 
-/** Editorial gradient placeholder standing in for real property photography — pass `src` to swap in a real photo with no layout change. */
+/** Editorial gradient placeholder standing in for real property photography — pass `src` to swap in a real photo with no layout change. Falls back to the gradient if the photo fails to load. */
 export default function PlaceholderImage({ variant, src, alt = '', className, style, iconSize = 28, children }: Props) {
   const cfg = VARIANTS[variant]
-
-  if (src) {
-    return (
-      <div className={className} style={{ position: 'relative', overflow: 'hidden', ...style }}>
-        <img src={src} alt={alt} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-        {children}
-      </div>
-    )
-  }
+  const [failed, setFailed] = useState(false)
+  const showPhoto = !!src && !failed
 
   return (
     <div
@@ -50,32 +43,41 @@ export default function PlaceholderImage({ variant, src, alt = '', className, st
         display: 'flex', alignItems: 'center', justifyContent: 'center', ...style,
       }}
     >
-      {/* subtle grain */}
-      <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.5, mixBlendMode: 'overlay' }}>
-        <filter id={`grain-${variant}`}>
-          <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves={2} stitchTiles="stitch" />
-          <feColorMatrix type="saturate" values="0" />
-        </filter>
-        <rect width="100%" height="100%" filter={`url(#grain-${variant})`} />
-      </svg>
+      {showPhoto ? (
+        <img
+          src={src} alt={alt} onError={() => setFailed(true)}
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+        />
+      ) : (
+        <>
+          {/* subtle grain */}
+          <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.5, mixBlendMode: 'overlay' }}>
+            <filter id={`grain-${variant}`}>
+              <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves={2} stitchTiles="stitch" />
+              <feColorMatrix type="saturate" values="0" />
+            </filter>
+            <rect width="100%" height="100%" filter={`url(#grain-${variant})`} />
+          </svg>
 
-      {cfg.skyline && (
-        <svg
-          viewBox="0 0 400 100" preserveAspectRatio="none"
-          style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', height: '42%', opacity: 0.28 }}
-        >
-          {[18, 55, 92, 130, 168, 205, 245, 282, 320, 358].map((x, i) => (
-            <rect key={i} x={x} y={100 - (30 + (i % 4) * 16)} width={26} height={30 + (i % 4) * 16} fill="#000" />
-          ))}
-        </svg>
+          {cfg.skyline && (
+            <svg
+              viewBox="0 0 400 100" preserveAspectRatio="none"
+              style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', height: '42%', opacity: 0.28 }}
+            >
+              {[18, 55, 92, 130, 168, 205, 245, 282, 320, 358].map((x, i) => (
+                <rect key={i} x={x} y={100 - (30 + (i % 4) * 16)} width={26} height={30 + (i % 4) * 16} fill="#000" />
+              ))}
+            </svg>
+          )}
+
+          <div style={{
+            color: 'rgba(255,255,255,0.55)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative',
+          }}>
+            {isValidElement(cfg.icon) ? cloneElement(cfg.icon as ReactElement<{ size?: number }>, { size: iconSize }) : cfg.icon}
+          </div>
+        </>
       )}
-
-      <div style={{
-        color: 'rgba(255,255,255,0.55)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative',
-      }}>
-        {isValidElement(cfg.icon) ? cloneElement(cfg.icon as ReactElement<{ size?: number }>, { size: iconSize }) : cfg.icon}
-      </div>
 
       {children}
     </div>

@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { ArrowRight, CheckCircle2 } from 'lucide-react'
 import PlaceholderImage from './PlaceholderImage'
 import Reveal from './Reveal'
+import { IMAGES } from './images'
 
 const POINTS = [
   'Reach more guests',
@@ -16,7 +17,7 @@ export default function HostCTA() {
       <Reveal>
         <div className="split-2">
           <PlaceholderImage
-            variant="host-welcome" alt="Host welcoming a guest" iconSize={36}
+            variant="host-welcome" src={IMAGES.hostMain} alt="Host welcoming a guest" iconSize={36}
             style={{ borderRadius: 28, height: 'clamp(280px, 34vw, 440px)' }}
           />
           <div>

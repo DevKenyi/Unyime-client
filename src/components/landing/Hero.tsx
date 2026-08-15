@@ -2,6 +2,7 @@ import { ShieldCheck, CreditCard, Star, MessageSquareHeart } from 'lucide-react'
 import SearchBar from './SearchBar'
 import PlaceholderImage from './PlaceholderImage'
 import Reveal from './Reveal'
+import { IMAGES } from './images'
 
 const TRUST_ITEMS = [
   { icon: <ShieldCheck size={15} />, label: 'Verified properties' },
@@ -53,6 +54,7 @@ export default function Hero() {
         }}>
           <PlaceholderImage
             variant="apartment-exterior"
+            src={IMAGES.heroMain}
             alt="Modern apartment exterior"
             iconSize={40}
             style={{ borderRadius: 28, height: 'clamp(320px, 46vw, 520px)' }}
@@ -76,11 +78,11 @@ export default function Hero() {
 
           <div style={{ display: 'grid', gridTemplateRows: '1fr 1fr', gap: 16 }}>
             <PlaceholderImage
-              variant="apartment-living" alt="Living room"
+              variant="apartment-living" src={IMAGES.heroSecondary1} alt="Living room"
               style={{ borderRadius: 24, height: 'clamp(150px, 22vw, 252px)' }}
             />
             <PlaceholderImage
-              variant="apartment-bedroom" alt="Bedroom"
+              variant="apartment-bedroom" src={IMAGES.heroSecondary2} alt="Bedroom"
               style={{ borderRadius: 24, height: 'clamp(150px, 22vw, 252px)' }}
             />
           </div>

@@ -4,6 +4,7 @@ import PlaceholderImage, { type ImageVariant } from './PlaceholderImage'
 
 interface Props {
   variant: ImageVariant
+  src?: string
   title: string
   location: string
   rating: string
@@ -12,11 +13,11 @@ interface Props {
 }
 
 /** Illustrative sample card — used only as a fallback when there's no live property data to show yet. */
-export default function ShowcaseCard({ variant, title, location, rating, price, to = '/properties' }: Props) {
+export default function ShowcaseCard({ variant, src, title, location, rating, price, to = '/properties' }: Props) {
   return (
     <Link to={to} style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}>
       <div className="media-zoom" style={{ position: 'relative', borderRadius: 20, aspectRatio: '4 / 3' }}>
-        <PlaceholderImage variant={variant} alt={title} className="media-zoom__img" style={{ borderRadius: 20, height: '100%' }} />
+        <PlaceholderImage variant={variant} src={src} alt={title} className="media-zoom__img" style={{ borderRadius: 20, height: '100%' }} />
       </div>
       <div style={{ padding: '14px 2px 0' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>

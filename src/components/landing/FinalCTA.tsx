@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
 import PlaceholderImage from './PlaceholderImage'
 import Reveal from './Reveal'
+import { IMAGES } from './images'
 
 export default function FinalCTA() {
   return (
@@ -9,6 +10,7 @@ export default function FinalCTA() {
       <Reveal>
         <PlaceholderImage
           variant="skyline-lagos"
+          src={IMAGES.finalCTA}
           alt="Beautiful stays across Nigeria"
           iconSize={0}
           style={{ borderRadius: 32, height: 'clamp(340px, 42vw, 480px)' }}

@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { MapPin, Users, Star, Heart } from 'lucide-react'
 import PlaceholderImage from './landing/PlaceholderImage'
+import { IMAGES } from './landing/images'
 import type { Property } from '../types'
 
 const FAVORITES_KEY = 'unyimi_favorites'
@@ -38,7 +39,7 @@ export default function PropertyCard({ property }: { property: Property }) {
       <div className="media-zoom" style={{ position: 'relative', borderRadius: 20, aspectRatio: '4 / 3' }}>
         <PlaceholderImage
           variant="apartment-living"
-          src={property.coverImageUrl}
+          src={property.coverImageUrl || IMAGES.featured1}
           alt={property.title}
           className="media-zoom__img"
           style={{ borderRadius: 20, height: '100%' }}

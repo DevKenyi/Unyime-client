@@ -1,10 +1,11 @@
-import PlaceholderImage from './PlaceholderImage'
 import TestimonialCard from './TestimonialCard'
 import Reveal from './Reveal'
+import { IMAGES } from './images'
 
 const TESTIMONIALS = [
-  { quote: "Booking through Unyimi was incredibly easy. The apartment looked exactly like the pictures and the host was amazing.", name: 'Sarah O.' },
-  { quote: "We found the perfect place for our weekend trip in minutes. Verified reviews made all the difference.", name: 'Tunde A.' },
+  { src: IMAGES.guest1, quote: "Booking through Unyimi was incredibly easy. The apartment looked exactly like the pictures and the host was amazing.", name: 'Sarah O.' },
+  { src: IMAGES.guest2, quote: "The whole experience felt seamless. Verified hosts and secure payments gave us complete peace of mind.", name: 'Chidi & Amara' },
+  { src: IMAGES.guest3, quote: "I loved the transparency. No hidden fees, no surprises — just a beautiful place to stay.", name: 'Tunde A.' },
 ]
 
 export default function GuestExperience() {
@@ -22,17 +23,8 @@ export default function GuestExperience() {
       </Reveal>
 
       <Reveal delay={80}>
-        <div className="guest-experience-grid" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 16 }}>
-          <PlaceholderImage
-            variant="lifestyle-couple"
-            alt="Happy guests enjoying their stay"
-            className="guest-experience-image"
-            iconSize={36}
-            style={{ borderRadius: 24, height: 320 }}
-          />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {TESTIMONIALS.map(t => <TestimonialCard key={t.name} {...t} />)}
-          </div>
+        <div className="grid-3">
+          {TESTIMONIALS.map(t => <TestimonialCard key={t.name} {...t} />)}
         </div>
       </Reveal>
     </section>
