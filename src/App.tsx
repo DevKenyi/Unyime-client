@@ -34,7 +34,7 @@ export default function App() {
           <Route path="/properties" element={<DiscoverPage />} />
           <Route path="/properties/:slug" element={<PropertyDetailPage />} />
           <Route path="/properties/:slug/book" element={<BookingPage />} />
-          <Route path="/booking/:bookingId" element={<BookingTrackerPage />} />
+          <Route path="/booking/:bookingId/status" element={<BookingTrackerPage />} />
 
           {/* Host dashboard */}
           <Route path="/host" element={<Navigate to="/host/dashboard" replace />} />
