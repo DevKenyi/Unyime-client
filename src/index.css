@@ -239,6 +239,7 @@ label {
 
 /* ── Landing page ───────────────────────────────────────── */
 .landing-nav-links { display: none; }
+.mobile-menu-trigger { display: flex; }
 .landing-hero-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -264,11 +265,12 @@ label {
 
 @media (min-width: 720px) {
   .landing-features-grid { grid-template-columns: repeat(2, 1fr); }
-  .landing-footer-grid { grid-template-columns: 2fr 1fr 1fr; }
+  .landing-footer-grid { grid-template-columns: 1.6fr 1fr 1fr 1fr; }
 }
 
 @media (min-width: 880px) {
   .landing-nav-links { display: flex; }
+  .mobile-menu-trigger { display: none; }
 }
 
 @media (min-width: 960px) {
@@ -299,4 +301,148 @@ label {
   font-size: 10px;
   font-weight: 700;
   border-radius: 9999px;
+}
+
+/* ── Buttons: subtle lift ───────────────────────────────── */
+.btn { transition: background 0.15s, opacity 0.15s, box-shadow 0.15s, transform 0.15s; }
+.btn:hover:not(:disabled) { transform: translateY(-1px); }
+.btn:active:not(:disabled) { transform: translateY(0); }
+
+/* ── Scroll reveal ──────────────────────────────────────── */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reveal.reveal-visible { opacity: 1; transform: translateY(0); }
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; transform: none; transition: none; }
+}
+
+/* ── Premium image card: zoom on hover ─────────────────── */
+.media-zoom { overflow: hidden; }
+.media-zoom__img {
+  width: 100%; height: 100%;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: scale(1);
+}
+.media-zoom:hover .media-zoom__img { transform: scale(1.06); }
+
+/* ── Favorite heart ─────────────────────────────────────── */
+.heart-btn {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: rgba(17,24,39,0.35); backdrop-filter: blur(4px);
+  border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: transform 0.15s, background 0.15s;
+}
+.heart-btn:hover { background: rgba(17,24,39,0.55); }
+.heart-btn:active { transform: scale(0.88); }
+.heart-btn.is-active svg { animation: heart-pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); }
+@keyframes heart-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.35); }
+  100% { transform: scale(1); }
+}
+
+/* ── Premium nav: blurred, scroll-aware ─────────────────── */
+.premium-nav {
+  position: sticky; top: 0; z-index: 50;
+  background: transparent;
+  transition: background 0.25s, border-color 0.25s, box-shadow 0.25s;
+  border-bottom: 1px solid transparent;
+}
+.premium-nav.is-scrolled {
+  background: rgba(253, 252, 250, 0.82);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom-color: #E5E7EB;
+  box-shadow: 0 1px 0 rgba(17,24,39,0.02);
+}
+
+/* ── Mobile menu ─────────────────────────────────────────── */
+.mobile-menu-panel {
+  position: fixed; inset: 0; z-index: 60;
+  background: #FDFCFA;
+  display: flex; flex-direction: column;
+  padding: 20px;
+  animation: mobile-menu-in 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes mobile-menu-in {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Horizontal scroll-snap (mobile card rows) ──────────── */
+.scroll-x {
+  display: flex; gap: 16px; overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+.scroll-x::-webkit-scrollbar { display: none; }
+.scroll-x > * { scroll-snap-align: start; flex-shrink: 0; }
+
+/* ── Responsive grids for the landing page ──────────────── */
+.grid-2 { display: grid; grid-template-columns: 1fr; gap: 20px; }
+.grid-3 { display: grid; grid-template-columns: 1fr; gap: 20px; }
+.grid-4 { display: grid; grid-template-columns: 1fr; gap: 20px; }
+.grid-5 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.split-2 { display: grid; grid-template-columns: 1fr; gap: 40px; align-items: center; }
+
+@media (min-width: 640px) {
+  .grid-2 { grid-template-columns: repeat(2, 1fr); }
+  .grid-3 { grid-template-columns: repeat(2, 1fr); }
+  .grid-4 { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 900px) {
+  .grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .grid-4 { grid-template-columns: repeat(4, 1fr); }
+  .grid-5 { grid-template-columns: repeat(5, 1fr); }
+  .split-2 { grid-template-columns: 1fr 1fr; gap: 64px; }
+}
+@media (min-width: 1100px) {
+  .hero-collage { grid-template-columns: 1.3fr 1fr !important; }
+}
+
+/* ── Floating search panel ───────────────────────────────── */
+.search-panel { flex-direction: column; }
+.search-field {
+  flex: 1; display: flex; flex-direction: column; gap: 3px;
+  padding: 10px 18px; border-radius: 14px;
+  transition: background 0.15s;
+}
+.search-field:hover, .search-field:focus-within { background: #F5F3EE; }
+.search-field-label {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; font-weight: 700; color: #6B7280;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.search-field-input {
+  border: none; outline: none; background: transparent;
+  font-size: 14.5px; font-family: inherit; color: #111827; padding: 0;
+  width: 100%;
+}
+.search-field-input::placeholder { color: #9CA3AF; }
+.search-divider { width: 1px; background: #E5E7EB; margin: 8px 0; flex-shrink: 0; }
+
+@media (min-width: 860px) {
+  .search-panel { flex-direction: row; }
+  .search-divider { display: block; }
+}
+@media (max-width: 859px) {
+  .search-divider { display: none; }
+  .search-field { border-bottom: 1px solid #F3F4F6; padding: 12px 14px; }
+}
+
+/* ── Destinations layout ─────────────────────────────────── */
+@media (min-width: 640px) {
+  .destinations-grid-primary { grid-template-columns: repeat(2, 1fr) !important; }
+}
+@media (min-width: 900px) {
+  .destinations-grid { grid-template-columns: 1.1fr 1fr !important; }
+  .destinations-grid-secondary { grid-template-columns: 1fr !important; }
+  .guest-experience-grid { grid-template-columns: 1.15fr 1fr !important; align-items: stretch; }
+  .guest-experience-image { height: 100% !important; min-height: 360px; }
 }

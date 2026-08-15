@@ -1,20 +1,59 @@
 import { Link } from 'react-router-dom'
-import { MapPin, Users, Star } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { MapPin, Users, Star, Heart } from 'lucide-react'
+import PlaceholderImage from './landing/PlaceholderImage'
 import type { Property } from '../types'
 
-const FALLBACK_IMAGE = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect width="400" height="300" fill="%23E8F5F1"/%3E%3C/svg%3E'
+const FAVORITES_KEY = 'unyimi_favorites'
+
+function useFavorite(propertyId: string) {
+  const [active, setActive] = useState(false)
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(FAVORITES_KEY)
+      const ids: string[] = raw ? JSON.parse(raw) : []
+      setActive(ids.includes(propertyId))
+    } catch { /* ignore */ }
+  }, [propertyId])
+
+  const toggle = () => {
+    try {
+      const raw = localStorage.getItem(FAVORITES_KEY)
+      const ids: string[] = raw ? JSON.parse(raw) : []
+      const next = active ? ids.filter(id => id !== propertyId) : [...ids, propertyId]
+      localStorage.setItem(FAVORITES_KEY, JSON.stringify(next))
+      setActive(!active)
+    } catch { /* ignore */ }
+  }
+
+  return { active, toggle }
+}
 
 export default function PropertyCard({ property }: { property: Property }) {
+  const { active, toggle } = useFavorite(property.id)
+
   return (
-    <Link
-      to={`/properties/${property.slug}`}
-      className="surface-card"
-      style={{ display: 'block', overflow: 'hidden', textDecoration: 'none', color: 'inherit' }}
-    >
-      <div style={{
-        height: 180, background: `url(${property.coverImageUrl || FALLBACK_IMAGE}) center/cover no-repeat`,
-      }} />
-      <div style={{ padding: '14px 16px' }}>
+    <Link to={`/properties/${property.slug}`} style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}>
+      <div className="media-zoom" style={{ position: 'relative', borderRadius: 20, aspectRatio: '4 / 3' }}>
+        <PlaceholderImage
+          variant="apartment-living"
+          src={property.coverImageUrl}
+          alt={property.title}
+          className="media-zoom__img"
+          style={{ borderRadius: 20, height: '100%' }}
+        />
+        <button
+          className={`heart-btn${active ? ' is-active' : ''}`}
+          onClick={e => { e.preventDefault(); toggle() }}
+          style={{ position: 'absolute', top: 12, right: 12 }}
+          aria-label={active ? 'Remove from favorites' : 'Add to favorites'}
+        >
+          <Heart size={16} color="#fff" fill={active ? '#EF4444' : 'none'} strokeWidth={2} />
+        </button>
+      </div>
+
+      <div style={{ padding: '14px 2px 0' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
           <h3 style={{ fontSize: 15, fontWeight: 700, color: '#111827', margin: 0, lineHeight: 1.3 }}>
             {property.title}
