@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import api from '../api/axios'
 import type { AuthUser } from '../types'
-import { Eye, EyeOff, Mail, Lock, Utensils } from 'lucide-react'
+import { Eye, EyeOff, Mail, Lock, Home } from 'lucide-react'
 
 export default function LoginPage() {
   const { login }   = useAuth()
@@ -21,8 +21,8 @@ export default function LoginPage() {
     try {
       const { data } = await api.post<AuthUser>('/api/auth/login', { email, password })
       login(data)
-      if (data.role === 'ADMIN') navigate('/admin/vendors')
-      else navigate('/vendor/dashboard')
+      if (data.role === 'ADMIN') navigate('/admin/dashboard')
+      else navigate('/host/dashboard')
     } catch (err: any) {
       setError(err.response?.data?.error ?? 'Invalid email or password')
     } finally {
@@ -48,7 +48,7 @@ export default function LoginPage() {
         marginBottom: 20,
         boxShadow: '0 8px 24px rgba(9,92,70,0.25)',
       }}>
-        <Utensils size={32} color="#fff" strokeWidth={1.75} />
+        <Home size={32} color="#fff" strokeWidth={1.75} />
       </div>
 
       {/* Heading */}
@@ -59,7 +59,7 @@ export default function LoginPage() {
         Welcome back
       </h1>
       <p style={{ fontSize: 15, color: '#6B7280', marginBottom: 28, textAlign: 'center' }}>
-        Sign in to order from your favourite spots
+        Sign in to your host or admin account
       </p>
 
       {/* Card */}
@@ -187,7 +187,7 @@ export default function LoginPage() {
           </button>
 
           <p style={{ textAlign: 'center', fontSize: 14, color: '#6B7280', marginTop: 18, marginBottom: 0 }}>
-            New to Movara?{' '}
+            New to Unyimi?{' '}
             <a href="#" style={{ color: '#095C46', fontWeight: 600, textDecoration: 'none' }}>
               Create an account
             </a>
@@ -197,7 +197,7 @@ export default function LoginPage() {
 
       {/* Footer */}
       <p style={{ fontSize: 12, color: '#9CA3AF', marginTop: 24, textAlign: 'center' }}>
-        By continuing, you agree to Movara's{' '}
+        By continuing, you agree to Unyimi's{' '}
         <a href="#" style={{ color: '#6B7280', textDecoration: 'underline' }}>Terms</a>
         {' '}and{' '}
         <a href="#" style={{ color: '#6B7280', textDecoration: 'underline' }}>Privacy</a>.

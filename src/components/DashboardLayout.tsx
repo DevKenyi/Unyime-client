@@ -2,25 +2,27 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useState, type ReactNode } from 'react'
 import {
-  LayoutDashboard, ClipboardList, UtensilsCrossed, QrCode,
-  Store, Settings, LogOut, Menu, X, ShieldCheck,
+  LayoutDashboard, ClipboardList, Home, Wallet,
+  Users, ShieldCheck, Banknote, LogOut, Menu, X, BadgeCheck,
 } from 'lucide-react'
 
 interface NavItem { label: string; to: string; icon: ReactNode }
 
-const VENDOR_NAV: NavItem[] = [
-  { label: 'Dashboard', to: '/vendor/dashboard', icon: <LayoutDashboard size={17} /> },
-  { label: 'Orders',    to: '/vendor/orders',    icon: <ClipboardList size={17} /> },
-  { label: 'Menu',      to: '/vendor/menu',      icon: <UtensilsCrossed size={17} /> },
-  { label: 'QR Code',   to: '/vendor/qr',        icon: <QrCode size={17} /> },
-  { label: 'Settings',  to: '/vendor/settings',  icon: <Settings size={17} /> },
+const HOST_NAV: NavItem[] = [
+  { label: 'Dashboard',  to: '/host/dashboard',  icon: <LayoutDashboard size={17} /> },
+  { label: 'Properties', to: '/host/properties', icon: <Home size={17} /> },
+  { label: 'Bookings',   to: '/host/bookings',   icon: <ClipboardList size={17} /> },
+  { label: 'Earnings',   to: '/host/earnings',   icon: <Wallet size={17} /> },
+  { label: 'Verification', to: '/host/kyc',      icon: <BadgeCheck size={17} /> },
 ]
 
 const ADMIN_NAV: NavItem[] = [
-  { label: 'Dashboard',   to: '/admin/dashboard', icon: <LayoutDashboard size={17} /> },
-  { label: 'Restaurants', to: '/admin/vendors',   icon: <Store size={17} /> },
-  { label: 'Orders',      to: '/admin/orders',    icon: <ClipboardList size={17} /> },
-  { label: 'Admins',      to: '/admin/admins',    icon: <ShieldCheck size={17} /> },
+  { label: 'Dashboard',   to: '/admin/dashboard',  icon: <LayoutDashboard size={17} /> },
+  { label: 'Properties',  to: '/admin/properties', icon: <Home size={17} /> },
+  { label: 'Bookings',    to: '/admin/bookings',   icon: <ClipboardList size={17} /> },
+  { label: 'Users',       to: '/admin/users',      icon: <Users size={17} /> },
+  { label: 'Verification', to: '/admin/kyc',       icon: <ShieldCheck size={17} /> },
+  { label: 'Payouts',     to: '/admin/payouts',    icon: <Banknote size={17} /> },
 ]
 
 interface Props { children: ReactNode }
@@ -29,7 +31,7 @@ export default function DashboardLayout({ children }: Props) {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const nav = user?.role === 'ADMIN' ? ADMIN_NAV : VENDOR_NAV
+  const nav = user?.role === 'ADMIN' ? ADMIN_NAV : HOST_NAV
 
   const handleLogout = () => { logout(); navigate('/login') }
 
@@ -47,7 +49,7 @@ export default function DashboardLayout({ children }: Props) {
             background: '#095C46', color: '#fff', fontWeight: 800,
             fontSize: 18, padding: '7px 14px', borderRadius: 10,
             letterSpacing: '-0.3px',
-          }}>Movara</div>
+          }}>Unyimi</div>
           {/* Close button — mobile only */}
           <button
             onClick={() => setSidebarOpen(false)}
@@ -62,7 +64,7 @@ export default function DashboardLayout({ children }: Props) {
           </button>
         </div>
         <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 6, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>
-          {user?.role === 'ADMIN' ? 'Admin Portal' : 'Vendor Portal'}
+          {user?.role === 'ADMIN' ? 'Admin Portal' : 'Host Portal'}
         </p>
       </div>
 

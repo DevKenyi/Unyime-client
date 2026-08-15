@@ -237,6 +237,55 @@ label {
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* ── Landing page ───────────────────────────────────────── */
+.landing-nav-links { display: none; }
+.landing-hero-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 48px;
+  align-items: center;
+}
+.landing-hero-visual { display: none; }
+.landing-features-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+.landing-steps-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 32px;
+}
+.landing-footer-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 28px;
+}
+
+@media (min-width: 720px) {
+  .landing-features-grid { grid-template-columns: repeat(2, 1fr); }
+  .landing-footer-grid { grid-template-columns: 2fr 1fr 1fr; }
+}
+
+@media (min-width: 880px) {
+  .landing-nav-links { display: flex; }
+}
+
+@media (min-width: 960px) {
+  .landing-hero-grid { grid-template-columns: 1.05fr 0.95fr; gap: 40px; }
+  .landing-hero-visual { display: block; }
+  .landing-steps-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (min-width: 1080px) {
+  .landing-features-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+@keyframes landing-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
 /* ── Badge ──────────────────────────────────────────────── */
 .badge {
   display: inline-flex;

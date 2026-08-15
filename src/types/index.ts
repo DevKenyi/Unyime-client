@@ -1,66 +1,178 @@
-export interface Vendor {
-  id: string
-  name: string
-  slug: string
-  description: string
-  logoUrl: string | null
-  isOpen: boolean
-  createdAt: string
-}
-
-export interface MenuItem {
-  id: string
-  name: string
-  description: string
-  price: number
-  imageUrl: string | null
-  isAvailable: boolean
-}
-
-export type OrderStatus =
-  | 'PENDING_PAYMENT'
-  | 'PAID'
-  | 'PREPARING'
-  | 'READY'
-  | 'DELIVERED'
-  | 'CANCELLED'
-  | 'FAILED'
-
-export interface OrderItem {
-  id: string
-  menuItemId: string
-  menuItemName: string
-  quantity: number
-  unitPrice: number
-  lineTotal: number
-}
-
-export interface Order {
-  id: string
-  vendorId: string
-  vendorName: string
-  customerName: string
-  customerPhone: string
-  subtotal: number
-  serviceCharge: number
-  total: number
-  paymentReference: string
-  status: OrderStatus
-  items: OrderItem[]
-  createdAt: string
-  paidAt: string | null
-}
-
-export interface CartItem {
-  menuItem: MenuItem
-  quantity: number
-}
-
-export type Role = 'ADMIN' | 'VENDOR_STAFF' | 'CUSTOMER'
+export type Role = 'ADMIN' | 'HOST' | 'GUEST'
 
 export interface AuthUser {
   token: string
   email: string
   role: Role
-  vendorId: string | null
+}
+
+// ── Property ──────────────────────────────────────────────────────────────
+
+export type PropertyStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
+
+export interface PropertyPhoto {
+  id: string
+  imageUrl: string
+  caption: string | null
+  sortOrder: number
+}
+
+export interface Property {
+  id: string
+  ownerId: string
+  title: string
+  slug: string
+  description: string | null
+  city: string
+  address: string | null
+  pricePerNight: number
+  cleaningFee: number | null
+  maxGuests: number
+  bedrooms: number
+  bathrooms: number
+  amenities: string[]
+  coverImageUrl: string | null
+  isActive: boolean
+  status: PropertyStatus
+  createdAt: string
+  photos: PropertyPhoto[] | null
+  averageRating: number | null
+  reviewCount: number
+}
+
+export interface UnavailableDateRange {
+  startDate: string
+  endDate: string
+  source: 'BOOKED' | 'BLOCKED'
+}
+
+export interface PropertyAvailability {
+  unavailableDates: UnavailableDateRange[]
+}
+
+export interface BlockedDate {
+  id: string
+  startDate: string
+  endDate: string
+  reason: string | null
+}
+
+// ── Booking ───────────────────────────────────────────────────────────────
+
+export type BookingStatus =
+  | 'PENDING_PAYMENT'
+  | 'CONFIRMED'
+  | 'CHECKED_IN'
+  | 'COMPLETED'
+  | 'CANCELLED'
+  | 'FAILED'
+
+export type RefundStatus = 'NONE' | 'PENDING' | 'PROCESSED'
+
+export interface Booking {
+  id: string
+  propertyId: string
+  propertyTitle: string
+  guestName: string
+  guestPhone: string
+  checkInDate: string
+  checkOutDate: string
+  nights: number
+  guestCount: number
+  pricePerNightSnapshot: number
+  cleaningFee: number
+  subtotal: number
+  serviceCharge: number
+  total: number
+  paymentReference: string
+  status: BookingStatus
+  createdAt: string
+  paidAt: string | null
+  refundStatus: RefundStatus
+  refundedAt: string | null
+}
+
+export interface CreateBookingResult {
+  bookingId: string
+  paymentReference: string
+}
+
+// ── Reviews ───────────────────────────────────────────────────────────────
+
+export interface Review {
+  id: string
+  propertyId: string
+  guestName: string
+  rating: number
+  cleanlinessRating: number | null
+  locationRating: number | null
+  accuracyRating: number | null
+  communicationRating: number | null
+  comment: string | null
+  hostResponse: string | null
+  createdAt: string
+}
+
+// ── Host earnings / payouts ─────────────────────────────────────────────
+
+export interface HostEarningsSummary {
+  totalEarnings: number
+  totalPaidOut: number
+  pendingPayoutAmount: number
+  availableBalance: number
+}
+
+export interface EarningsTransaction {
+  bookingId: string
+  propertyTitle: string
+  amount: number
+  status: BookingStatus
+  date: string
+}
+
+export type PayoutStatus = 'PENDING' | 'PAID'
+
+export interface Payout {
+  id: string
+  amount: number
+  status: PayoutStatus
+  requestedAt: string
+  paidAt: string | null
+}
+
+// ── KYC ───────────────────────────────────────────────────────────────────
+
+export type KycStatus = 'UNVERIFIED' | 'PENDING' | 'VERIFIED' | 'REJECTED'
+export type IdDocumentType = 'NATIONAL_ID' | 'PASSPORT' | 'DRIVERS_LICENSE'
+
+export interface KycStatusInfo {
+  hostId: string
+  legalName: string | null
+  idDocumentType: IdDocumentType | null
+  idDocumentUrl: string | null
+  status: KycStatus
+  submittedAt: string | null
+  verifiedAt: string | null
+}
+
+// ── Admin ─────────────────────────────────────────────────────────────────
+
+export interface AdminDashboard {
+  totalUsers: number
+  totalHosts: number
+  totalGuests: number
+  totalProperties: number
+  activeBookings: number
+  revenue: number
+  platformFees: number
+  pendingPayoutAmount: number
+  cancellations: number
+}
+
+export interface AdminUser {
+  id: string
+  email: string
+  role: Role
+  enabled: boolean
+  createdAt: string
 }
