@@ -1,51 +1,60 @@
-import { Link } from 'react-router-dom'
+import { useState, type FormEvent } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import {
-  Utensils, QrCode, Smartphone, Bell, LayoutDashboard,
-  ArrowRight, CheckCircle2, Star, Clock, ChefHat, Menu as MenuIcon,
+  Home, Search, ShieldCheck, CalendarCheck, CreditCard, Star,
+  ArrowRight, CheckCircle2, MapPin, KeyRound, Sparkles,
 } from 'lucide-react'
 
 const FEATURES = [
   {
-    icon: <QrCode size={20} />,
-    title: 'Scan-to-order QR codes',
-    desc: 'Every table gets a unique code that opens your live menu — no app to download, no waiter to flag down.',
+    icon: <ShieldCheck size={20} />,
+    title: 'Verified hosts',
+    desc: 'Every host completes identity verification before their property goes live — so you know who you\'re booking with.',
   },
   {
-    icon: <Bell size={20} />,
-    title: 'Real-time order tracking',
-    desc: 'Guests watch their order move from received to preparing to ready, right from their phone.',
+    icon: <CalendarCheck size={20} />,
+    title: 'Real-time availability',
+    desc: 'See exactly which dates are open, book instantly, and never worry about a double-booked stay.',
   },
   {
-    icon: <LayoutDashboard size={20} />,
-    title: 'Live vendor dashboard',
-    desc: 'Kitchen and floor staff see new orders the second they land, with one tap to update status.',
+    icon: <CreditCard size={20} />,
+    title: 'Secure payments',
+    desc: 'Pay safely online with a transparent price breakdown — nightly rate, cleaning fee, and service charge, no surprises.',
   },
   {
-    icon: <Smartphone size={20} />,
-    title: 'Works on any phone',
-    desc: 'Built for the mobile web — fast on any device, on any connection, with no install friction.',
+    icon: <Star size={20} />,
+    title: 'Real guest reviews',
+    desc: 'Ratings and reviews come only from guests who actually stayed, so you can book with confidence.',
   },
 ]
 
 const STEPS = [
   {
-    icon: <QrCode size={22} />,
-    title: 'Scan the code',
-    desc: 'Guests scan the QR code on their table and land straight on your live menu.',
+    icon: <Search size={22} />,
+    title: 'Search',
+    desc: 'Tell us where you\'re headed, your dates, and how many guests — we\'ll show you what\'s available.',
   },
   {
-    icon: <ChefHat size={22} />,
-    title: 'Order & pay',
-    desc: 'They browse, build their order, and check out in under a minute — no waiting on staff.',
+    icon: <KeyRound size={22} />,
+    title: 'Book & pay',
+    desc: 'Pick your stay, review the price breakdown, and pay securely online in a couple of minutes.',
   },
   {
-    icon: <Clock size={22} />,
-    title: 'Track in real time',
-    desc: 'Your kitchen updates the order status live, so guests always know what\'s next.',
+    icon: <Sparkles size={22} />,
+    title: 'Stay',
+    desc: 'Get your host\'s check-in details and enjoy your stay — leave a review when you\'re done.',
   },
 ]
 
 export default function LandingPage() {
+  const navigate = useNavigate()
+  const [city, setCity] = useState('')
+
+  const handleSearch = (e: FormEvent) => {
+    e.preventDefault()
+    navigate(city.trim() ? `/properties?city=${encodeURIComponent(city.trim())}` : '/properties')
+  }
+
   return (
     <div style={{ minHeight: '100vh', background: '#F5F3EE', overflowX: 'hidden' }}>
       {/* ── Nav ─────────────────────────────────────────── */}
@@ -65,10 +74,10 @@ export default function LandingPage() {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               flexShrink: 0,
             }}>
-              <Utensils size={18} color="#fff" strokeWidth={1.75} />
+              <Home size={18} color="#fff" strokeWidth={1.75} />
             </div>
             <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: '-0.3px', color: '#111827' }}>
-              Movara
+              Unyimi
             </span>
           </div>
 
@@ -76,11 +85,11 @@ export default function LandingPage() {
             <a href="#how-it-works" style={{ fontSize: 14, fontWeight: 500, color: '#374151', textDecoration: 'none' }}>
               How it works
             </a>
-            <a href="#features" style={{ fontSize: 14, fontWeight: 500, color: '#374151', textDecoration: 'none' }}>
-              Features
-            </a>
-            <a href="#for-restaurants" style={{ fontSize: 14, fontWeight: 500, color: '#374151', textDecoration: 'none' }}>
-              For restaurants
+            <Link to="/properties" style={{ fontSize: 14, fontWeight: 500, color: '#374151', textDecoration: 'none' }}>
+              Browse stays
+            </Link>
+            <a href="#become-a-host" style={{ fontSize: 14, fontWeight: 500, color: '#374151', textDecoration: 'none' }}>
+              Become a host
             </a>
           </nav>
 
@@ -92,138 +101,55 @@ export default function LandingPage() {
 
       {/* ── Hero ────────────────────────────────────────── */}
       <section style={{ maxWidth: 1160, margin: '0 auto', padding: '64px 20px 40px' }}>
-        <div className="landing-hero-grid">
-          <div>
-            <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: 8,
-              background: '#E8F5F1', color: '#095C46',
-              padding: '6px 14px', borderRadius: 9999,
-              fontSize: 13, fontWeight: 700, marginBottom: 20,
-            }}>
-              <QrCode size={14} /> QR ordering, reinvented
-            </div>
-
-            <h1 style={{
-              fontSize: 'clamp(34px, 5vw, 54px)', fontWeight: 800,
-              lineHeight: 1.08, letterSpacing: '-1.2px', color: '#111827',
-              margin: '0 0 20px',
-            }}>
-              Table-side ordering,<br />
-              without the <span style={{ color: '#095C46' }}>wait staff bottleneck</span>
-            </h1>
-
-            <p style={{
-              fontSize: 17, lineHeight: 1.6, color: '#6B7280',
-              maxWidth: 480, margin: '0 0 32px',
-            }}>
-              Movara turns any table into an ordering counter. Guests scan, browse
-              your live menu, and order in seconds — your kitchen sees it instantly.
-            </p>
-
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 32 }}>
-              <Link to="/login" className="btn btn-primary btn-lg">
-                Get started <ArrowRight size={16} />
-              </Link>
-              <a href="#how-it-works" className="btn btn-outline btn-lg">
-                See how it works
-              </a>
-            </div>
-
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px 24px' }}>
-              {['No app to download', 'Live in minutes', 'Real-time kitchen sync'].map(item => (
-                <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                  <CheckCircle2 size={16} color="#095C46" />
-                  <span style={{ fontSize: 13.5, color: '#374151', fontWeight: 500 }}>{item}</span>
-                </div>
-              ))}
-            </div>
+        <div style={{ maxWidth: 640, margin: '0 auto', textAlign: 'center' }}>
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8,
+            background: '#E8F5F1', color: '#095C46',
+            padding: '6px 14px', borderRadius: 9999,
+            fontSize: 13, fontWeight: 700, marginBottom: 20,
+          }}>
+            <MapPin size={14} /> Stays across Nigeria
           </div>
 
-          {/* Visual: floating menu / order mockup */}
-          <div className="landing-hero-visual" style={{ position: 'relative', height: 460 }}>
-            <div style={{
-              position: 'absolute', inset: 0,
-              background: 'radial-gradient(60% 60% at 70% 30%, rgba(9,92,70,0.14), transparent 70%)',
-            }} />
+          <h1 style={{
+            fontSize: 'clamp(34px, 5vw, 54px)', fontWeight: 800,
+            lineHeight: 1.08, letterSpacing: '-1.2px', color: '#111827',
+            margin: '0 0 20px',
+          }}>
+            Book unique stays,<br />
+            <span style={{ color: '#095C46' }}>hosted by verified locals</span>
+          </h1>
 
-            {/* Phone-style menu card */}
-            <div style={{
-              position: 'absolute', top: 20, left: 30, width: 280,
-              background: '#fff', borderRadius: 24, border: '1px solid #E5E7EB',
-              boxShadow: '0 24px 48px -20px rgba(17,24,39,0.22)', overflow: 'hidden',
-            }}>
-              <div style={{ background: '#095C46', padding: '18px 20px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div style={{
-                    width: 38, height: 38, borderRadius: 10, background: 'rgba(255,255,255,0.15)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}>
-                    <MenuIcon size={18} color="#fff" />
-                  </div>
-                  <div>
-                    <p style={{ color: '#fff', fontWeight: 700, fontSize: 14, margin: 0 }}>The Grove Kitchen</p>
-                    <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11.5, margin: 0 }}>Table 12 · Open now</p>
-                  </div>
-                </div>
+          <p style={{
+            fontSize: 17, lineHeight: 1.6, color: '#6B7280',
+            maxWidth: 480, margin: '0 auto 32px',
+          }}>
+            Unyimi connects you with verified hosts across Nigeria — search real
+            availability, book securely, and pay with confidence.
+          </p>
+
+          <form onSubmit={handleSearch} className="surface-card" style={{
+            display: 'flex', gap: 8, padding: 10, maxWidth: 480, margin: '0 auto 24px',
+          }}>
+            <input
+              className="input"
+              placeholder="Where do you want to stay?"
+              value={city}
+              onChange={e => setCity(e.target.value)}
+              style={{ border: 'none', flex: 1 }}
+            />
+            <button type="submit" className="btn btn-primary btn-md">
+              <Search size={15} /> Search
+            </button>
+          </form>
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '10px 24px' }}>
+            {['Verified hosts', 'Instant availability', 'Secure payments'].map(item => (
+              <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                <CheckCircle2 size={16} color="#095C46" />
+                <span style={{ fontSize: 13.5, color: '#374151', fontWeight: 500 }}>{item}</span>
               </div>
-              <div style={{ padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {[
-                  { name: 'Jollof Rice & Grilled Chicken', price: '₦4,500' },
-                  { name: 'Suya Skewers (3pc)', price: '₦3,200' },
-                  { name: 'Chapman Mocktail', price: '₦1,800' },
-                ].map(item => (
-                  <div key={item.name} style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
-                    <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                      <div style={{ width: 34, height: 34, borderRadius: 8, background: '#F5F3EE', flexShrink: 0 }} />
-                      <span style={{ fontSize: 12.5, color: '#111827', fontWeight: 600, maxWidth: 140 }}>{item.name}</span>
-                    </div>
-                    <span style={{ fontSize: 12.5, color: '#095C46', fontWeight: 700, whiteSpace: 'nowrap' }}>{item.price}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Floating: order ready badge */}
-            <div style={{
-              position: 'absolute', top: 40, right: 10,
-              background: '#fff', borderRadius: 16, padding: '12px 16px',
-              boxShadow: '0 16px 32px -14px rgba(17,24,39,0.25)',
-              display: 'flex', alignItems: 'center', gap: 10,
-              animation: 'landing-float 4s ease-in-out infinite',
-            }}>
-              <span className="status-pill status-ready">
-                <span className="status-dot" /> Ready
-              </span>
-              <span style={{ fontSize: 12, color: '#6B7280', fontWeight: 500 }}>Order #482</span>
-            </div>
-
-            {/* Floating: rating card */}
-            <div style={{
-              position: 'absolute', bottom: 50, left: 4,
-              background: '#fff', borderRadius: 16, padding: '12px 16px',
-              boxShadow: '0 16px 32px -14px rgba(17,24,39,0.25)',
-              display: 'flex', alignItems: 'center', gap: 8,
-              animation: 'landing-float 5s ease-in-out infinite 0.5s',
-            }}>
-              <Star size={16} color="#F59E0B" fill="#F59E0B" />
-              <span style={{ fontSize: 13, fontWeight: 700, color: '#111827' }}>4.9</span>
-              <span style={{ fontSize: 12, color: '#9CA3AF' }}>· 2 min avg wait</span>
-            </div>
-
-            {/* Floating: prep time card */}
-            <div style={{
-              position: 'absolute', bottom: 0, right: 40,
-              background: '#095C46', borderRadius: 16, padding: '14px 18px',
-              boxShadow: '0 16px 32px -14px rgba(9,92,70,0.4)',
-              animation: 'landing-float 4.5s ease-in-out infinite 1s',
-            }}>
-              <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: 11, margin: 0, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                Kitchen synced
-              </p>
-              <p style={{ color: '#fff', fontSize: 15, margin: '2px 0 0', fontWeight: 700 }}>
-                Live in real time
-              </p>
-            </div>
+            ))}
           </div>
         </div>
       </section>
@@ -232,10 +158,10 @@ export default function LandingPage() {
       <section id="how-it-works" style={{ maxWidth: 1160, margin: '0 auto', padding: '64px 20px' }}>
         <div style={{ textAlign: 'center', maxWidth: 560, margin: '0 auto 48px' }}>
           <h2 style={{ fontSize: 'clamp(26px, 3.5vw, 36px)', fontWeight: 800, letterSpacing: '-0.6px', color: '#111827', margin: '0 0 12px' }}>
-            From scan to served, in three steps
+            From search to stay, in three steps
           </h2>
           <p style={{ fontSize: 15.5, color: '#6B7280', margin: 0 }}>
-            No downloads, no accounts, no waiting for a menu.
+            No middlemen, no guesswork — just verified places to stay.
           </p>
         </div>
 
@@ -271,10 +197,10 @@ export default function LandingPage() {
         <div style={{ maxWidth: 1160, margin: '0 auto', padding: '64px 20px' }}>
           <div style={{ textAlign: 'center', maxWidth: 560, margin: '0 auto 44px' }}>
             <h2 style={{ fontSize: 'clamp(26px, 3.5vw, 36px)', fontWeight: 800, letterSpacing: '-0.6px', color: '#111827', margin: '0 0 12px' }}>
-              Everything your floor and kitchen need
+              Built for trust, on both sides
             </h2>
             <p style={{ fontSize: 15.5, color: '#6B7280', margin: 0 }}>
-              One system connecting the table to the kitchen — built for speed on both ends.
+              Every part of a booking — from listing to payout — is designed to be verifiable.
             </p>
           </div>
 
@@ -302,7 +228,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── CTA banner ──────────────────────────────────── */}
-      <section id="for-restaurants" style={{ maxWidth: 1160, margin: '0 auto', padding: '72px 20px' }}>
+      <section id="become-a-host" style={{ maxWidth: 1160, margin: '0 auto', padding: '72px 20px' }}>
         <div style={{
           background: 'linear-gradient(135deg, #095C46, #053A2C)',
           borderRadius: 28, padding: 'clamp(36px, 6vw, 56px)',
@@ -316,14 +242,14 @@ export default function LandingPage() {
             fontSize: 'clamp(26px, 4vw, 38px)', fontWeight: 800, color: '#fff',
             letterSpacing: '-0.6px', margin: '0 0 14px', position: 'relative',
           }}>
-            Own a restaurant? Get set up in minutes.
+            Have a property? Start hosting today.
           </h2>
           <p style={{
             fontSize: 16, color: 'rgba(255,255,255,0.78)', maxWidth: 480,
             margin: '0 auto 28px', position: 'relative',
           }}>
-            Sign in to manage your menu, print your table QR codes, and start
-            taking orders today.
+            Sign in to list your property, manage bookings, and track your
+            earnings — all in one dashboard.
           </p>
           <Link
             to="/login"
@@ -346,13 +272,13 @@ export default function LandingPage() {
                   background: 'linear-gradient(135deg, #3DAA82, #095C46)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>
-                  <Utensils size={16} color="#fff" strokeWidth={1.75} />
+                  <Home size={16} color="#fff" strokeWidth={1.75} />
                 </div>
-                <span style={{ fontSize: 16, fontWeight: 800, color: '#111827' }}>Movara</span>
+                <span style={{ fontSize: 16, fontWeight: 800, color: '#111827' }}>Unyimi</span>
               </div>
               <p style={{ fontSize: 13.5, color: '#6B7280', maxWidth: 280, lineHeight: 1.6 }}>
-                Table-side QR ordering for restaurants — scan, order, and track,
-                without the app.
+                A property booking marketplace for verified hosts and guests
+                across Nigeria.
               </p>
             </div>
 
@@ -362,7 +288,7 @@ export default function LandingPage() {
               </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
                 <a href="#how-it-works" style={{ fontSize: 13.5, color: '#374151', textDecoration: 'none' }}>How it works</a>
-                <a href="#features" style={{ fontSize: 13.5, color: '#374151', textDecoration: 'none' }}>Features</a>
+                <Link to="/properties" style={{ fontSize: 13.5, color: '#374151', textDecoration: 'none' }}>Browse stays</Link>
                 <Link to="/login" style={{ fontSize: 13.5, color: '#374151', textDecoration: 'none' }}>Sign in</Link>
               </div>
             </div>
@@ -379,7 +305,7 @@ export default function LandingPage() {
           </div>
 
           <p style={{ fontSize: 12, color: '#9CA3AF', marginTop: 32, paddingTop: 20, borderTop: '1px solid #E5E7EB' }}>
-            © {new Date().getFullYear()} Movara. All rights reserved.
+            © {new Date().getFullYear()} Unyimi. All rights reserved.
           </p>
         </div>
       </footer>
