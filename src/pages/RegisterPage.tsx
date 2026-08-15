@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import api from '../api/axios'
 import type { AuthUser } from '../types'
-import { Eye, EyeOff, Mail, Lock, Home } from 'lucide-react'
+import { Eye, EyeOff, Mail, Lock, Home, ArrowLeft } from 'lucide-react'
 
 export default function RegisterPage() {
   const { login } = useAuth()
@@ -35,7 +35,19 @@ export default function RegisterPage() {
     <div style={{
       minHeight: '100vh', background: '#F5F3EE', display: 'flex',
       flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 16px',
+      position: 'relative',
     }}>
+      <Link
+        to="/"
+        style={{
+          position: 'absolute', top: 24, left: 24,
+          display: 'inline-flex', alignItems: 'center', gap: 6,
+          fontSize: 14, fontWeight: 600, color: '#374151', textDecoration: 'none',
+        }}
+      >
+        <ArrowLeft size={16} /> Back to home
+      </Link>
+
       <div style={{
         width: 72, height: 72, borderRadius: 20,
         background: 'linear-gradient(135deg, #3DAA82, #095C46)',
