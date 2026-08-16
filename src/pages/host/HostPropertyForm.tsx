@@ -1,30 +1,40 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Plus, Trash2, X } from 'lucide-react'
+import { CheckCircle2, Plus, Trash2 } from 'lucide-react'
 import DashboardLayout from '../../components/DashboardLayout'
-import ImageUploadField from '../../components/ImageUploadField'
 import api from '../../api/axios'
-import { uploadImage } from '../../utils/cloudinaryUpload'
 import type { BlockedDate, Property, PropertyPhoto } from '../../types'
+import { EMPTY_WIZARD_STATE, type WizardPhoto, type WizardState } from './property-wizard/wizardTypes'
+import ListingPreviewCard from './property-wizard/ListingPreviewCard'
+import StepAbout from './property-wizard/StepAbout'
+import StepSpace from './property-wizard/StepSpace'
+import StepPhotos from './property-wizard/StepPhotos'
+import StepPricing from './property-wizard/StepPricing'
+import StepPreview from './property-wizard/StepPreview'
 
-interface FormState {
-  title: string
-  description: string
-  city: string
-  address: string
-  pricePerNight: string
-  cleaningFee: string
-  maxGuests: string
-  bedrooms: string
-  bathrooms: string
-  amenities: string
-  coverImageUrl: string
+const STEPS = ['About', 'Space & amenities', 'Photos', 'Pricing', 'Preview']
+
+function isStepValid(step: number, state: WizardState): boolean {
+  switch (step) {
+    case 0: return state.title.trim() !== '' && state.city.trim() !== ''
+    case 1: return state.maxGuests >= 1
+    case 2: return state.photos.length >= 1
+    case 3: return Number(state.pricePerNight) >= 0.01
+    default: return true
+  }
 }
 
-const EMPTY_FORM: FormState = {
-  title: '', description: '', city: '', address: '',
-  pricePerNight: '', cleaningFee: '', maxGuests: '1', bedrooms: '1', bathrooms: '1',
-  amenities: '', coverImageUrl: '',
+async function syncPhotos(propertyId: string, original: WizardPhoto[], current: WizardPhoto[]) {
+  const currentIds = new Set(current.filter(p => p.id).map(p => p.id))
+  const deleted = original.filter(o => !currentIds.has(o.id))
+  await Promise.all(deleted.map(p => api.delete(`/api/host/properties/${propertyId}/photos/${p.id}`)))
+
+  await Promise.all(current.map((photo, index) => {
+    const body = { imageUrl: photo.url, caption: photo.caption || null, sortOrder: index }
+    return photo.id
+      ? api.put(`/api/host/properties/${propertyId}/photos/${photo.id}`, body)
+      : api.post(`/api/host/properties/${propertyId}/photos`, body)
+  }))
 }
 
 export default function HostPropertyForm() {
@@ -32,62 +42,97 @@ export default function HostPropertyForm() {
   const isEdit = !!propertyId
   const navigate = useNavigate()
 
-  const [form, setForm] = useState<FormState>(EMPTY_FORM)
+  const [state, setState] = useState<WizardState>(EMPTY_WIZARD_STATE)
+  const [originalPhotos, setOriginalPhotos] = useState<WizardPhoto[]>([])
+  const [step, setStep] = useState(0)
+  const [maxReached, setMaxReached] = useState(0)
   const [loading, setLoading] = useState(isEdit)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [submitted, setSubmitted] = useState(false)
+  const [savedPropertyId, setSavedPropertyId] = useState<string | null>(propertyId ?? null)
 
   useEffect(() => {
-    if (!isEdit) return
-    api.get<Property[]>('/api/host/properties')
-      .then(({ data }) => {
-        const p = data.find(x => x.id === propertyId)
+    if (!isEdit || !propertyId) return
+    Promise.all([
+      api.get<Property[]>('/api/host/properties'),
+      api.get<PropertyPhoto[]>(`/api/host/properties/${propertyId}/photos`),
+    ])
+      .then(([propsRes, photosRes]) => {
+        const p = propsRes.data.find(x => x.id === propertyId)
         if (!p) { setError('Property not found.'); return }
-        setForm({
+        const wizardPhotos: WizardPhoto[] = photosRes.data
+          .slice().sort((a, b) => a.sortOrder - b.sortOrder)
+          .map(ph => ({ id: ph.id, url: ph.imageUrl, caption: ph.caption ?? '' }))
+        setOriginalPhotos(wizardPhotos)
+        setState({
           title: p.title,
+          propertyType: p.propertyType,
           description: p.description ?? '',
           city: p.city,
           address: p.address ?? '',
+          maxGuests: p.maxGuests,
+          bedrooms: p.bedrooms,
+          beds: p.beds,
+          bathrooms: p.bathrooms,
+          amenities: p.amenities,
+          photos: wizardPhotos,
           pricePerNight: String(p.pricePerNight),
           cleaningFee: p.cleaningFee != null ? String(p.cleaningFee) : '',
-          maxGuests: String(p.maxGuests),
-          bedrooms: String(p.bedrooms),
-          bathrooms: String(p.bathrooms),
-          amenities: p.amenities.join(', '),
-          coverImageUrl: p.coverImageUrl ?? '',
+          minNights: String(p.minNights),
+          houseRules: p.houseRules ?? '',
         })
+        setMaxReached(STEPS.length - 1)
       })
       .finally(() => setLoading(false))
   }, [isEdit, propertyId])
 
-  const set = (key: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-    setForm(prev => ({ ...prev, [key]: e.target.value }))
+  const update = <K extends keyof WizardState>(key: K, value: WizardState[K]) => {
+    setState(prev => ({ ...prev, [key]: value }))
+  }
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault()
+  const goToStep = (target: number) => {
+    if (target <= maxReached) setStep(target)
+  }
+
+  const handleContinue = () => {
+    if (!isStepValid(step, state)) return
+    const next = Math.min(step + 1, STEPS.length - 1)
+    setStep(next)
+    setMaxReached(m => Math.max(m, next))
+  }
+
+  const handleSubmit = async () => {
     setSaving(true)
     setError('')
     const payload = {
-      title: form.title,
-      description: form.description || null,
-      city: form.city,
-      address: form.address || null,
-      pricePerNight: Number(form.pricePerNight),
-      cleaningFee: form.cleaningFee ? Number(form.cleaningFee) : null,
-      maxGuests: Number(form.maxGuests),
-      bedrooms: Number(form.bedrooms),
-      bathrooms: Number(form.bathrooms),
-      amenities: form.amenities.split(',').map(a => a.trim()).filter(Boolean),
-      coverImageUrl: form.coverImageUrl || null,
+      title: state.title,
+      description: state.description || null,
+      propertyType: state.propertyType,
+      city: state.city,
+      address: state.address || null,
+      pricePerNight: Number(state.pricePerNight),
+      cleaningFee: state.cleaningFee ? Number(state.cleaningFee) : null,
+      maxGuests: state.maxGuests,
+      bedrooms: state.bedrooms,
+      beds: state.beds,
+      bathrooms: state.bathrooms,
+      minNights: state.minNights ? Number(state.minNights) : 1,
+      houseRules: state.houseRules || null,
+      amenities: state.amenities,
+      coverImageUrl: state.photos[0]?.url ?? null,
     }
     try {
-      if (isEdit) {
-        await api.put(`/api/host/properties/${propertyId}`, payload)
+      let id = savedPropertyId
+      if (isEdit && id) {
+        await api.put(`/api/host/properties/${id}`, payload)
       } else {
         const { data } = await api.post<Property>('/api/host/properties', payload)
-        navigate(`/host/properties/${data.id}/edit`, { replace: true })
-        return
+        id = data.id
+        setSavedPropertyId(id)
       }
+      await syncPhotos(id!, originalPhotos, state.photos)
+      setSubmitted(true)
     } catch (err: any) {
       setError(err.response?.data?.error ?? 'Could not save this property.')
     } finally {
@@ -95,178 +140,121 @@ export default function HostPropertyForm() {
     }
   }
 
+  const handleExit = () => {
+    const hasProgress = state.title.trim() !== '' || state.city.trim() !== ''
+    if (!hasProgress || window.confirm('Discard this listing and go back?')) {
+      navigate('/host/properties')
+    }
+  }
+
   if (loading) {
     return <DashboardLayout><div style={{ textAlign: 'center', padding: '60px 0' }}><span className="spinner spinner-dark" /></div></DashboardLayout>
+  }
+
+  if (submitted) {
+    return (
+      <DashboardLayout>
+        <div className="page-shell">
+          <div className="surface-card" style={{ padding: '48px 32px', maxWidth: 480, margin: '40px auto', textAlign: 'center' }}>
+            <div style={{
+              width: 56, height: 56, borderRadius: '50%', background: '#E8F5F1', color: '#095C46',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 18px',
+            }}>
+              <CheckCircle2 size={28} />
+            </div>
+            <h1 style={{ fontSize: 19, fontWeight: 800, color: '#111827', margin: '0 0 8px' }}>
+              {isEdit ? 'Changes saved' : 'Your property has been submitted'}
+            </h1>
+            <p style={{ fontSize: 14, color: '#6B7280', margin: '0 0 20px', lineHeight: 1.6 }}>
+              {isEdit
+                ? 'Your listing has been updated.'
+                : "Our team will review your listing and notify you once it's approved."}
+            </p>
+            {!isEdit && (
+              <span className="status-pill status-pending" style={{ marginBottom: 20 }}>
+                <span className="status-dot" /> Listing status: Pending review
+              </span>
+            )}
+            <div style={{ marginTop: 20 }}>
+              <button className="btn btn-primary btn-md" onClick={() => navigate('/host/properties')}>Done</button>
+            </div>
+          </div>
+        </div>
+      </DashboardLayout>
+    )
   }
 
   return (
     <DashboardLayout>
       <div className="page-shell">
-        <div className="page-header">
-          <h1 className="page-title">{isEdit ? 'Edit property' : 'Add property'}</h1>
-          <p className="page-subtitle">
-            {isEdit ? 'Update your listing details.' : 'New listings need admin approval before they appear in search.'}
-          </p>
+        <div className="page-header" style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <h1 className="page-title">{isEdit ? 'Edit property' : 'List your property'}</h1>
+            <p className="page-subtitle">Step {step + 1} of {STEPS.length} — {STEPS[step]}</p>
+          </div>
+          <button className="btn btn-secondary btn-sm" onClick={handleExit}>Exit</button>
         </div>
 
-        <form onSubmit={handleSubmit} className="surface-card" style={{ padding: 24, maxWidth: 640 }}>
-          <div className="form-group">
-            <label>Title</label>
-            <input className="input" required value={form.title} onChange={set('title')} />
-          </div>
-          <div className="form-group">
-            <label>Description</label>
-            <textarea className="input" rows={4} value={form.description} onChange={set('description')} />
-          </div>
-          <div className="form-row-2" style={{ display: 'grid', gap: 16 }}>
-            <div className="form-group">
-              <label>City</label>
-              <input className="input" required value={form.city} onChange={set('city')} />
-            </div>
-            <div className="form-group">
-              <label>Address</label>
-              <input className="input" value={form.address} onChange={set('address')} />
-            </div>
-          </div>
-          <div className="form-row-2" style={{ display: 'grid', gap: 16 }}>
-            <div className="form-group">
-              <label>Price per night (₦)</label>
-              <input className="input" type="number" min={0.01} step="0.01" required value={form.pricePerNight} onChange={set('pricePerNight')} />
-            </div>
-            <div className="form-group">
-              <label>Cleaning fee (₦, optional)</label>
-              <input className="input" type="number" min={0} step="0.01" value={form.cleaningFee} onChange={set('cleaningFee')} />
-            </div>
-          </div>
-          <div className="form-row-3" style={{ display: 'grid', gap: 16 }}>
-            <div className="form-group">
-              <label>Max guests</label>
-              <input className="input" type="number" min={1} required value={form.maxGuests} onChange={set('maxGuests')} />
-            </div>
-            <div className="form-group">
-              <label>Bedrooms</label>
-              <input className="input" type="number" min={0} required value={form.bedrooms} onChange={set('bedrooms')} />
-            </div>
-            <div className="form-group">
-              <label>Bathrooms</label>
-              <input className="input" type="number" min={0} required value={form.bathrooms} onChange={set('bathrooms')} />
-            </div>
-          </div>
-          <div className="form-group">
-            <label>Amenities (comma-separated)</label>
-            <input className="input" placeholder="Wi-Fi, Pool, Parking" value={form.amenities} onChange={set('amenities')} />
-          </div>
-          <ImageUploadField
-            label="Cover image"
-            value={form.coverImageUrl || null}
-            onChange={url => setForm(prev => ({ ...prev, coverImageUrl: url ?? '' }))}
-          />
+        <div className="wizard-rail">
+          {STEPS.map((label, i) => (
+            <button
+              key={label} type="button"
+              className={`wizard-step${i === step ? ' is-active' : ''}${i < step || i < maxReached ? ' is-done' : ''}${i <= maxReached ? ' is-clickable' : ''}`}
+              onClick={() => goToStep(i)}
+              disabled={i > maxReached}
+            >
+              <span className="wizard-step-dot">{i + 1}</span>
+              {label}
+            </button>
+          ))}
+        </div>
 
-          {error && <p style={{ color: '#DC2626', fontSize: 13, marginBottom: 12 }}>{error}</p>}
+        <div className="wizard-layout">
+          <div className="surface-card" style={{ padding: 24 }}>
+            {step === 0 && <StepAbout state={state} update={update} />}
+            {step === 1 && <StepSpace state={state} update={update} />}
+            {step === 2 && <StepPhotos state={state} update={update} />}
+            {step === 3 && <StepPricing state={state} update={update} />}
+            {step === 4 && (
+              <StepPreview
+                state={state}
+                isEdit={isEdit}
+                saving={saving}
+                error={error}
+                onEdit={() => setStep(0)}
+                onSubmit={handleSubmit}
+              />
+            )}
 
-          <button type="submit" className="btn btn-primary btn-md" disabled={saving}>
-            {saving ? <span className="spinner" /> : isEdit ? 'Save changes' : 'Create property'}
-          </button>
-        </form>
+            {step < 4 && (
+              <>
+                {error && <p style={{ color: '#DC2626', fontSize: 13, marginTop: 16 }}>{error}</p>}
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 24 }}>
+                  <button
+                    type="button" className="btn btn-secondary btn-md"
+                    onClick={() => setStep(s => Math.max(0, s - 1))} disabled={step === 0}
+                  >
+                    ← Back
+                  </button>
+                  <button
+                    type="button" className="btn btn-primary btn-md"
+                    onClick={handleContinue} disabled={!isStepValid(step, state)}
+                  >
+                    Continue →
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
 
-        {isEdit && propertyId && (
-          <>
-            <PhotosManager propertyId={propertyId} />
-            <BlockedDatesManager propertyId={propertyId} />
-          </>
-        )}
+          <div className="wizard-preview-pane">
+            <ListingPreviewCard state={state} />
+          </div>
+        </div>
+
+        {isEdit && propertyId && <BlockedDatesManager propertyId={propertyId} />}
       </div>
     </DashboardLayout>
-  )
-}
-
-function PhotosManager({ propertyId }: { propertyId: string }) {
-  const [photos, setPhotos] = useState<PropertyPhoto[]>([])
-  const [loading, setLoading] = useState(true)
-  const [caption, setCaption] = useState('')
-  const [uploading, setUploading] = useState(false)
-  const [error, setError] = useState('')
-  const inputRef = useRef<HTMLInputElement>(null)
-
-  const load = () => {
-    setLoading(true)
-    api.get<PropertyPhoto[]>(`/api/host/properties/${propertyId}/photos`)
-      .then(({ data }) => setPhotos(data))
-      .finally(() => setLoading(false))
-  }
-
-  useEffect(load, [propertyId])
-
-  const handleFile = async (file: File | undefined) => {
-    if (!file) return
-    setError('')
-    setUploading(true)
-    try {
-      const imageUrl = await uploadImage(file)
-      await api.post(`/api/host/properties/${propertyId}/photos`, { imageUrl, caption: caption || null, sortOrder: photos.length })
-      setCaption('')
-      load()
-    } catch (err: any) {
-      setError(err.message ?? 'Could not upload this photo.')
-    } finally {
-      setUploading(false)
-      if (inputRef.current) inputRef.current.value = ''
-    }
-  }
-
-  const removePhoto = async (photoId: string) => {
-    await api.delete(`/api/host/properties/${propertyId}/photos/${photoId}`)
-    setPhotos(prev => prev.filter(p => p.id !== photoId))
-  }
-
-  return (
-    <div className="surface-card" style={{ padding: 24, maxWidth: 640, marginTop: 20 }}>
-      <h2 style={{ fontSize: 15, fontWeight: 700, color: '#111827', margin: '0 0 14px' }}>Photos</h2>
-
-      {loading ? <span className="spinner spinner-dark" /> : (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 16 }}>
-          {photos.map(photo => (
-            <div key={photo.id} style={{ position: 'relative', width: 100, height: 100 }}>
-              <img src={photo.imageUrl} alt={photo.caption ?? ''} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 10 }} />
-              <button
-                onClick={() => removePhoto(photo.id)}
-                style={{
-                  position: 'absolute', top: -6, right: -6, width: 22, height: 22, borderRadius: '50%',
-                  background: '#DC2626', color: '#fff', border: 'none', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}
-              >
-                <X size={13} />
-              </button>
-            </div>
-          ))}
-
-          <button
-            type="button"
-            onClick={() => !uploading && inputRef.current?.click()}
-            className="surface-muted"
-            style={{
-              width: 100, height: 100, borderRadius: 10, border: '1.5px dashed #D1D5DB',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: uploading ? 'default' : 'pointer', background: 'none',
-            }}
-            aria-label="Upload photo"
-          >
-            {uploading ? <span className="spinner spinner-dark" /> : <Plus size={20} color="#9CA3AF" />}
-          </button>
-          <input
-            ref={inputRef} type="file" accept="image/*" hidden
-            onChange={e => handleFile(e.target.files?.[0])}
-          />
-        </div>
-      )}
-
-      <input
-        className="input" placeholder="Caption for next photo (optional)"
-        value={caption} onChange={e => setCaption(e.target.value)} style={{ maxWidth: 320 }}
-      />
-      {error && <p style={{ color: '#DC2626', fontSize: 12.5, marginTop: 8 }}>{error}</p>}
-    </div>
   )
 }
 
@@ -311,7 +299,7 @@ function BlockedDatesManager({ propertyId }: { propertyId: string }) {
   }
 
   return (
-    <div className="surface-card" style={{ padding: 24, maxWidth: 640, marginTop: 20 }}>
+    <div className="surface-card" style={{ padding: 24 }}>
       <h2 style={{ fontSize: 15, fontWeight: 700, color: '#111827', margin: '0 0 14px' }}>Blocked dates</h2>
       <p style={{ fontSize: 13, color: '#6B7280', margin: '0 0 14px' }}>
         Block dates for maintenance or personal use — these won't be bookable by guests.

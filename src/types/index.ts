@@ -9,6 +9,7 @@ export interface AuthUser {
 // ── Property ──────────────────────────────────────────────────────────────
 
 export type PropertyStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
+export type PropertyType = 'APARTMENT' | 'HOUSE' | 'VILLA' | 'HOTEL' | 'ROOM'
 
 export interface PropertyPhoto {
   id: string
@@ -23,13 +24,17 @@ export interface Property {
   title: string
   slug: string
   description: string | null
+  propertyType: PropertyType
   city: string
   address: string | null
   pricePerNight: number
   cleaningFee: number | null
   maxGuests: number
   bedrooms: number
+  beds: number
   bathrooms: number
+  minNights: number
+  houseRules: string | null
   amenities: string[]
   coverImageUrl: string | null
   isActive: boolean
