@@ -1,8 +1,10 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Plus, Trash2, X } from 'lucide-react'
 import DashboardLayout from '../../components/DashboardLayout'
+import ImageUploadField from '../../components/ImageUploadField'
 import api from '../../api/axios'
+import { uploadImage } from '../../utils/cloudinaryUpload'
 import type { BlockedDate, Property, PropertyPhoto } from '../../types'
 
 interface FormState {
@@ -154,10 +156,11 @@ export default function HostPropertyForm() {
             <label>Amenities (comma-separated)</label>
             <input className="input" placeholder="Wi-Fi, Pool, Parking" value={form.amenities} onChange={set('amenities')} />
           </div>
-          <div className="form-group">
-            <label>Cover image URL</label>
-            <input className="input" type="url" value={form.coverImageUrl} onChange={set('coverImageUrl')} />
-          </div>
+          <ImageUploadField
+            label="Cover image"
+            value={form.coverImageUrl || null}
+            onChange={url => setForm(prev => ({ ...prev, coverImageUrl: url ?? '' }))}
+          />
 
           {error && <p style={{ color: '#DC2626', fontSize: 13, marginBottom: 12 }}>{error}</p>}
 
@@ -180,9 +183,10 @@ export default function HostPropertyForm() {
 function PhotosManager({ propertyId }: { propertyId: string }) {
   const [photos, setPhotos] = useState<PropertyPhoto[]>([])
   const [loading, setLoading] = useState(true)
-  const [imageUrl, setImageUrl] = useState('')
   const [caption, setCaption] = useState('')
-  const [adding, setAdding] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [error, setError] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null)
 
   const load = () => {
     setLoading(true)
@@ -193,17 +197,20 @@ function PhotosManager({ propertyId }: { propertyId: string }) {
 
   useEffect(load, [propertyId])
 
-  const addPhoto = async (e: FormEvent) => {
-    e.preventDefault()
-    if (!imageUrl.trim()) return
-    setAdding(true)
+  const handleFile = async (file: File | undefined) => {
+    if (!file) return
+    setError('')
+    setUploading(true)
     try {
+      const imageUrl = await uploadImage(file)
       await api.post(`/api/host/properties/${propertyId}/photos`, { imageUrl, caption: caption || null, sortOrder: photos.length })
-      setImageUrl('')
       setCaption('')
       load()
+    } catch (err: any) {
+      setError(err.message ?? 'Could not upload this photo.')
     } finally {
-      setAdding(false)
+      setUploading(false)
+      if (inputRef.current) inputRef.current.value = ''
     }
   }
 
@@ -233,16 +240,32 @@ function PhotosManager({ propertyId }: { propertyId: string }) {
               </button>
             </div>
           ))}
+
+          <button
+            type="button"
+            onClick={() => !uploading && inputRef.current?.click()}
+            className="surface-muted"
+            style={{
+              width: 100, height: 100, borderRadius: 10, border: '1.5px dashed #D1D5DB',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: uploading ? 'default' : 'pointer', background: 'none',
+            }}
+            aria-label="Upload photo"
+          >
+            {uploading ? <span className="spinner spinner-dark" /> : <Plus size={20} color="#9CA3AF" />}
+          </button>
+          <input
+            ref={inputRef} type="file" accept="image/*" hidden
+            onChange={e => handleFile(e.target.files?.[0])}
+          />
         </div>
       )}
 
-      <form onSubmit={addPhoto} style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        <input className="input" placeholder="Image URL" required value={imageUrl} onChange={e => setImageUrl(e.target.value)} style={{ flex: '1 1 220px' }} />
-        <input className="input" placeholder="Caption (optional)" value={caption} onChange={e => setCaption(e.target.value)} style={{ flex: '1 1 160px' }} />
-        <button type="submit" className="btn btn-secondary btn-md" disabled={adding}>
-          <Plus size={14} /> Add
-        </button>
-      </form>
+      <input
+        className="input" placeholder="Caption for next photo (optional)"
+        value={caption} onChange={e => setCaption(e.target.value)} style={{ maxWidth: 320 }}
+      />
+      {error && <p style={{ color: '#DC2626', fontSize: 12.5, marginTop: 8 }}>{error}</p>}
     </div>
   )
 }
