@@ -111,7 +111,7 @@ export default function BookingPage() {
         </h1>
 
         <form onSubmit={handleSubmit} className="surface-card" style={{ padding: 24, marginBottom: 20 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 4 }}>
+          <div className="form-row-2" style={{ display: 'grid', gap: 16, marginBottom: 4 }}>
             <div className="form-group">
               <label><Calendar size={13} style={{ marginRight: 4, verticalAlign: -2 }} />Check-in</label>
               <input

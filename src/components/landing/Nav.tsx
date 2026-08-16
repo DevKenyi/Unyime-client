@@ -36,7 +36,7 @@ export default function Nav() {
           <span style={{ fontSize: 19, fontWeight: 800, letterSpacing: '-0.3px', color: '#111827' }}>Unyimi</span>
         </Link>
 
-        <nav className="landing-nav-links" style={{ alignItems: 'center', gap: 32 }}>
+        <nav className="landing-nav-links" style={{ alignItems: 'center', gap: 22 }}>
           {LINKS.map(link => link.isRoute ? (
             <Link key={link.label} to={link.href} style={{ fontSize: 14.5, fontWeight: 500, color: '#374151', textDecoration: 'none' }}>
               {link.label}

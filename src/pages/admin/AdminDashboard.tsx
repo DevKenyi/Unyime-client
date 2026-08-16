@@ -77,7 +77,7 @@ export default function AdminDashboard() {
               <StatTile icon={<XCircle size={16} />} label="Cancellations" value={data.cancellations} />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 16 }}>
+            <div className="detail-layout" style={{ display: 'grid', gap: 16 }}>
               <div className="surface-card" style={{ padding: 20 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                   <TrendingUp size={16} color="#095C46" />

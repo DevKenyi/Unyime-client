@@ -73,14 +73,13 @@ export default function PropertyDetailPage() {
 
       <main style={{ maxWidth: 1080, margin: '0 auto', padding: '24px 20px 60px' }}>
         {/* Photo gallery */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: photos.length > 1 ? '2fr 1fr' : '1fr',
-          gap: 8, borderRadius: 20, overflow: 'hidden', marginBottom: 24, height: 360,
-        }}>
+        <div
+          className={`photo-gallery-grid${photos.length > 1 ? ' has-secondary' : ''}`}
+          style={{ display: 'grid', gap: 8, borderRadius: 20, overflow: 'hidden', marginBottom: 24 }}
+        >
           <div style={{ background: `url(${photos[0].imageUrl}) center/cover no-repeat` }} />
           {photos.length > 1 && (
-            <div style={{ display: 'grid', gridTemplateRows: 'repeat(2, 1fr)', gap: 8 }}>
+            <div className="photo-gallery-secondary" style={{ gridTemplateRows: 'repeat(2, 1fr)', gap: 8 }}>
               {photos.slice(1, 3).map(photo => (
                 <div key={photo.id} style={{ background: `url(${photo.imageUrl}) center/cover no-repeat` }} />
               ))}
@@ -88,7 +87,7 @@ export default function PropertyDetailPage() {
           )}
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 32 }}>
+        <div className="detail-layout" style={{ display: 'grid', gap: 32 }}>
           {/* Left: details */}
           <div>
             <h1 style={{ fontSize: 26, fontWeight: 800, color: '#111827', margin: '0 0 8px', letterSpacing: '-0.4px' }}>

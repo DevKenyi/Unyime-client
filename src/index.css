@@ -268,7 +268,7 @@ label {
   .landing-footer-grid { grid-template-columns: 1.6fr 1fr 1fr 1fr; }
 }
 
-@media (min-width: 880px) {
+@media (min-width: 768px) {
   .landing-nav-links { display: flex; }
   .mobile-menu-trigger { display: none; }
 }
@@ -434,6 +434,27 @@ label {
 @media (max-width: 859px) {
   .search-divider { display: none; }
   .search-field { border-bottom: 1px solid #F3F4F6; padding: 12px 14px; }
+}
+
+/* ── Photo gallery (property detail) ─────────────────────── */
+.photo-gallery-grid { grid-template-columns: 1fr; height: 280px; }
+.photo-gallery-secondary { display: none; }
+@media (min-width: 640px) {
+  .photo-gallery-grid.has-secondary { grid-template-columns: 2fr 1fr; height: 360px; }
+  .photo-gallery-secondary { display: grid; }
+}
+
+/* ── Detail page: content + sidebar ──────────────────────── */
+.detail-layout { grid-template-columns: 1fr; }
+@media (min-width: 900px) {
+  .detail-layout { grid-template-columns: 1.6fr 1fr; }
+}
+
+/* ── Form rows: stack on narrow viewports ────────────────── */
+.form-row-2, .form-row-3 { grid-template-columns: 1fr !important; }
+@media (min-width: 560px) {
+  .form-row-2 { grid-template-columns: 1fr 1fr !important; }
+  .form-row-3 { grid-template-columns: 1fr 1fr 1fr !important; }
 }
 
 /* ── Destinations layout ─────────────────────────────────── */

@@ -116,7 +116,7 @@ export default function HostPropertyForm() {
             <label>Description</label>
             <textarea className="input" rows={4} value={form.description} onChange={set('description')} />
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <div className="form-row-2" style={{ display: 'grid', gap: 16 }}>
             <div className="form-group">
               <label>City</label>
               <input className="input" required value={form.city} onChange={set('city')} />
@@ -126,7 +126,7 @@ export default function HostPropertyForm() {
               <input className="input" value={form.address} onChange={set('address')} />
             </div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <div className="form-row-2" style={{ display: 'grid', gap: 16 }}>
             <div className="form-group">
               <label>Price per night (₦)</label>
               <input className="input" type="number" min={0.01} step="0.01" required value={form.pricePerNight} onChange={set('pricePerNight')} />
@@ -136,7 +136,7 @@ export default function HostPropertyForm() {
               <input className="input" type="number" min={0} step="0.01" value={form.cleaningFee} onChange={set('cleaningFee')} />
             </div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
+          <div className="form-row-3" style={{ display: 'grid', gap: 16 }}>
             <div className="form-group">
               <label>Max guests</label>
               <input className="input" type="number" min={1} required value={form.maxGuests} onChange={set('maxGuests')} />
