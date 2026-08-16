@@ -53,11 +53,7 @@ export default function DashboardLayout({ children }: Props) {
           {/* Close button — mobile only */}
           <button
             onClick={() => setSidebarOpen(false)}
-            style={{
-              display: 'none',
-              background: 'none', border: 'none', cursor: 'pointer',
-              color: '#6B7280', padding: 4,
-            }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B7280', padding: 4 }}
             className="sidebar-close-btn"
           >
             <X size={20} />
@@ -117,25 +113,24 @@ export default function DashboardLayout({ children }: Props) {
       {sidebarOpen && (
         <div
           onClick={() => setSidebarOpen(false)}
-          style={{
-            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
-            zIndex: 40, display: 'none',
-          }}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 40 }}
           className="mobile-backdrop"
         />
       )}
 
       {/* Sidebar — desktop: always visible; mobile: slide-in overlay */}
-      <aside style={{
-        width: 232,
-        flexShrink: 0,
-        background: '#FFFFFF',
-        borderRight: '1px solid #E5E7EB',
-        position: 'sticky',
-        top: 0,
-        height: '100vh',
-        overflowY: 'auto',
-      }}>
+      <aside
+        className={`dashboard-sidebar${sidebarOpen ? ' is-open' : ''}`}
+        style={{
+          width: 232,
+          flexShrink: 0,
+          background: '#FFFFFF',
+          borderRight: '1px solid #E5E7EB',
+          top: 0,
+          height: '100vh',
+          overflowY: 'auto',
+        }}
+      >
         <SidebarContent />
       </aside>
 
@@ -156,6 +151,7 @@ export default function DashboardLayout({ children }: Props) {
           <button
             onClick={() => setSidebarOpen(true)}
             style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B7280', padding: 4 }}
+            className="dashboard-menu-trigger"
           >
             <Menu size={20} />
           </button>

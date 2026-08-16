@@ -457,6 +457,24 @@ label {
   .form-row-3 { grid-template-columns: 1fr 1fr 1fr !important; }
 }
 
+/* ── Dashboard layout: mobile slide-in sidebar ───────────────── */
+.dashboard-menu-trigger { display: flex; }
+.dashboard-sidebar {
+  position: fixed; inset: 0 auto 0 0; z-index: 50;
+  transform: translateX(-100%);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.dashboard-sidebar.is-open { transform: translateX(0); }
+.mobile-backdrop { display: block; }
+.sidebar-close-btn { display: flex; }
+
+@media (min-width: 768px) {
+  .dashboard-menu-trigger { display: none; }
+  .dashboard-sidebar { position: sticky; transform: none; }
+  .mobile-backdrop { display: none; }
+  .sidebar-close-btn { display: none; }
+}
+
 /* ── Listing wizard ───────────────────────────────────────── */
 .wizard-layout { display: grid; grid-template-columns: 1fr; gap: 24px; align-items: start; }
 .wizard-preview-pane { display: none; }
