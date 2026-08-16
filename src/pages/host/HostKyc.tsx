@@ -1,7 +1,8 @@
-import { useEffect, useState, type FormEvent } from 'react'
-import { ShieldCheck } from 'lucide-react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { ShieldCheck, Upload, X } from 'lucide-react'
 import DashboardLayout from '../../components/DashboardLayout'
 import api from '../../api/axios'
+import { uploadImage } from '../../utils/cloudinaryUpload'
 import type { IdDocumentType, KycStatusInfo } from '../../types'
 
 const STATUS_COPY: Record<string, { label: string; cls: string }> = {
@@ -19,8 +20,10 @@ export default function HostKyc() {
   const [idDocumentType, setIdDocumentType] = useState<IdDocumentType>('NATIONAL_ID')
   const [idDocumentUrl, setIdDocumentUrl] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     api.get<KycStatusInfo>('/api/host/kyc')
@@ -32,6 +35,21 @@ export default function HostKyc() {
       })
       .finally(() => setLoading(false))
   }, [])
+
+  const handleFile = async (file: File | undefined) => {
+    if (!file) return
+    setError('')
+    setUploading(true)
+    try {
+      const url = await uploadImage(file, 'kyc')
+      setIdDocumentUrl(url)
+    } catch (err: any) {
+      setError(err.message ?? 'Could not upload this photo.')
+    } finally {
+      setUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -96,11 +114,46 @@ export default function HostKyc() {
                   </select>
                 </div>
                 <div className="form-group">
-                  <label>ID document link</label>
+                  <label>ID document photo</label>
+                  <div
+                    onClick={() => canEdit && !uploading && fileInputRef.current?.click()}
+                    className="surface-muted"
+                    style={{
+                      height: 180, borderRadius: 12, cursor: canEdit && !uploading ? 'pointer' : 'default',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      position: 'relative', overflow: 'hidden', border: '1.5px dashed #D1D5DB',
+                    }}
+                  >
+                    {idDocumentUrl ? (
+                      <>
+                        <img src={idDocumentUrl} alt="ID document" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        {canEdit && (
+                          <button
+                            type="button"
+                            onClick={e => { e.stopPropagation(); setIdDocumentUrl('') }}
+                            style={{
+                              position: 'absolute', top: 8, right: 8, width: 26, height: 26, borderRadius: '50%',
+                              background: 'rgba(17,24,39,0.6)', color: '#fff', border: 'none', cursor: 'pointer',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            }}
+                            aria-label="Remove photo"
+                          >
+                            <X size={14} />
+                          </button>
+                        )}
+                      </>
+                    ) : uploading ? (
+                      <span className="spinner spinner-dark" />
+                    ) : (
+                      <div style={{ textAlign: 'center', color: '#9CA3AF' }}>
+                        <Upload size={22} style={{ marginBottom: 6 }} />
+                        <p style={{ fontSize: 13, margin: 0 }}>Click to upload a photo/scan of your ID</p>
+                      </div>
+                    )}
+                  </div>
                   <input
-                    className="input" required disabled={!canEdit} type="url"
-                    value={idDocumentUrl} onChange={e => setIdDocumentUrl(e.target.value)}
-                    placeholder="Link to a photo/scan of your ID"
+                    ref={fileInputRef} type="file" accept="image/*" hidden
+                    onChange={e => handleFile(e.target.files?.[0])}
                   />
                 </div>
 
@@ -108,7 +161,7 @@ export default function HostKyc() {
                 {success && <p style={{ color: '#065F46', fontSize: 13, marginBottom: 12 }}>Submitted — we'll review it shortly.</p>}
 
                 {canEdit && (
-                  <button type="submit" className="btn btn-primary btn-md" disabled={submitting}>
+                  <button type="submit" className="btn btn-primary btn-md" disabled={submitting || uploading || !idDocumentUrl}>
                     {submitting ? <span className="spinner" /> : status === 'REJECTED' ? 'Resubmit' : 'Submit for review'}
                   </button>
                 )}

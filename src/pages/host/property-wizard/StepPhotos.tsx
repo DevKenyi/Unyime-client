@@ -14,7 +14,7 @@ export default function StepPhotos({ state, update }: StepProps) {
     setError('')
     setUploading(true)
     try {
-      const uploads = await Promise.all(Array.from(files).map(uploadImage))
+      const uploads = await Promise.all(Array.from(files).map(file => uploadImage(file)))
       const newPhotos: WizardPhoto[] = uploads.map(url => ({ id: null, url, caption: '' }))
       update('photos', [...state.photos, ...newPhotos])
     } catch (err: any) {
