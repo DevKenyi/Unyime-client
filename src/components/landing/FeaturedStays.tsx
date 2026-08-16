@@ -19,7 +19,7 @@ export default function FeaturedStays() {
 
   useEffect(() => {
     api.get<Property[]>('/api/public/properties')
-      .then(({ data }) => setProperties(data.slice(0, 6)))
+      .then(({ data }) => setProperties(Array.isArray(data) ? data.slice(0, 6) : []))
       .catch(() => setProperties([]))
       .finally(() => setLoaded(true))
   }, [])

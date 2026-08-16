@@ -29,7 +29,10 @@ export default function DiscoverPage() {
     setLoading(true)
     setError('')
     api.get<Property[]>('/api/public/properties', { params })
-      .then(({ data }) => setProperties(data))
+      .then(({ data }) => {
+        if (!Array.isArray(data)) throw new Error('Unexpected response shape')
+        setProperties(data)
+      })
       .catch(() => setError('Could not load properties. Please try again.'))
       .finally(() => setLoading(false))
   }, [searchParams])
