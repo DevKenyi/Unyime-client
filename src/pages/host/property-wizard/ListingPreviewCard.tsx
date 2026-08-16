@@ -1,9 +1,11 @@
 import { BedDouble, Bath, MapPin, Sparkles, Users } from 'lucide-react'
 import PlaceholderImage from '../../../components/landing/PlaceholderImage'
-import type { WizardState } from './wizardTypes'
+import { formatMoney } from '../../../utils/currency'
+import { CURRENCY_BY_COUNTRY, type WizardState } from './wizardTypes'
 
 export default function ListingPreviewCard({ state }: { state: WizardState }) {
   const coverUrl = state.photos[0]?.url ?? null
+  const currency = CURRENCY_BY_COUNTRY[state.country]
 
   return (
     <div className="surface-card" style={{ overflow: 'hidden' }}>
@@ -41,7 +43,7 @@ export default function ListingPreviewCard({ state }: { state: WizardState }) {
 
         <div style={{ marginTop: 12, display: 'flex', alignItems: 'baseline', gap: 4 }}>
           <span style={{ fontSize: 17, fontWeight: 800, color: '#095C46' }}>
-            {state.pricePerNight ? `₦${Number(state.pricePerNight).toLocaleString()}` : '₦0'}
+            {formatMoney(state.pricePerNight ? Number(state.pricePerNight) : 0, currency)}
           </span>
           <span style={{ fontSize: 12.5, color: '#6B7280' }}>/ night</span>
         </div>

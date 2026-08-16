@@ -3,6 +3,7 @@ import { Calendar, Users, Star, MessageSquare } from 'lucide-react'
 import DashboardLayout from '../../components/DashboardLayout'
 import api from '../../api/axios'
 import StatusPill from '../../components/StatusPill'
+import { formatMoney } from '../../utils/currency'
 import type { Booking, BookingStatus, Property, Review } from '../../types'
 
 const NEXT_STATUS: Partial<Record<BookingStatus, { label: string; status: BookingStatus }[]>> = {
@@ -69,7 +70,7 @@ export default function HostBookings() {
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{ fontSize: 14, fontWeight: 700, color: '#095C46' }}>₦{b.total.toLocaleString()}</span>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: '#095C46' }}>{formatMoney(b.total, b.currency)}</span>
                     <StatusPill status={b.status} />
                   </div>
                 </div>

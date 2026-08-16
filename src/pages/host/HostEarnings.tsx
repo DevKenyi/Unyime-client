@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { Wallet, CheckCircle2, Clock, Banknote } from 'lucide-react'
 import DashboardLayout from '../../components/DashboardLayout'
 import api from '../../api/axios'
+import { formatMoney } from '../../utils/currency'
 import type { EarningsTransaction, HostEarningsSummary, Payout } from '../../types'
 
 export default function HostEarnings() {
@@ -60,23 +61,23 @@ export default function HostEarnings() {
         {!loading && summary && (
           <>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16 }}>
-              <StatCard icon={<Wallet size={17} />} label="Total earnings" value={summary.totalEarnings} />
-              <StatCard icon={<CheckCircle2 size={17} />} label="Paid out" value={summary.totalPaidOut} />
-              <StatCard icon={<Clock size={17} />} label="Pending payout" value={summary.pendingPayoutAmount} />
-              <StatCard icon={<Banknote size={17} />} label="Available balance" value={summary.availableBalance} highlight />
+              <StatCard icon={<Wallet size={17} />} label="Total earnings" value={summary.totalEarnings} currency={summary.currency} />
+              <StatCard icon={<CheckCircle2 size={17} />} label="Paid out" value={summary.totalPaidOut} currency={summary.currency} />
+              <StatCard icon={<Clock size={17} />} label="Pending payout" value={summary.pendingPayoutAmount} currency={summary.currency} />
+              <StatCard icon={<Banknote size={17} />} label="Available balance" value={summary.availableBalance} currency={summary.currency} highlight />
             </div>
 
             <div className="surface-card" style={{ padding: 24, maxWidth: 420 }}>
               <h2 style={{ fontSize: 15, fontWeight: 700, color: '#111827', margin: '0 0 14px' }}>Request a payout</h2>
               <form onSubmit={requestPayout}>
                 <div className="form-group">
-                  <label>Amount (₦)</label>
+                  <label>Amount ({summary.currency})</label>
                   <input
                     className="input" type="number" min={0.01} step="0.01" max={summary.availableBalance} required
                     value={amount} onChange={e => setAmount(e.target.value)}
                   />
                   <p style={{ fontSize: 12, color: '#9CA3AF', marginTop: 4 }}>
-                    Available: ₦{summary.availableBalance.toLocaleString()}
+                    Available: {formatMoney(summary.availableBalance, summary.currency)}
                   </p>
                 </div>
                 {error && <p style={{ color: '#DC2626', fontSize: 13, marginBottom: 12 }}>{error}</p>}
@@ -93,7 +94,7 @@ export default function HostEarnings() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {payouts.map(p => (
                   <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #F3F4F6', fontSize: 13.5 }}>
-                    <span style={{ color: '#111827', fontWeight: 600 }}>₦{p.amount.toLocaleString()}</span>
+                    <span style={{ color: '#111827', fontWeight: 600 }}>{formatMoney(p.amount, summary.currency)}</span>
                     <span style={{ color: '#6B7280' }}>{new Date(p.requestedAt).toLocaleDateString()}</span>
                     <span className={`status-pill ${p.status === 'PAID' ? 'status-delivered' : 'status-pending'}`}>
                       <span className="status-dot" />{p.status}
@@ -111,7 +112,7 @@ export default function HostEarnings() {
                   <div key={t.bookingId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #F3F4F6', fontSize: 13.5 }}>
                     <span style={{ color: '#111827' }}>{t.propertyTitle}</span>
                     <span style={{ color: '#6B7280' }}>{new Date(t.date).toLocaleDateString()}</span>
-                    <span style={{ color: '#095C46', fontWeight: 700 }}>₦{t.amount.toLocaleString()}</span>
+                    <span style={{ color: '#095C46', fontWeight: 700 }}>{formatMoney(t.amount, t.currency)}</span>
                   </div>
                 ))}
               </div>
@@ -123,14 +124,14 @@ export default function HostEarnings() {
   )
 }
 
-function StatCard({ icon, label, value, highlight }: { icon: React.ReactNode; label: string; value: number; highlight?: boolean }) {
+function StatCard({ icon, label, value, currency, highlight }: { icon: React.ReactNode; label: string; value: number; currency: string; highlight?: boolean }) {
   return (
     <div className="surface-card" style={{ padding: 18, ...(highlight ? { background: '#E8F5F1', border: '1px solid #095C46' } : {}) }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#095C46', marginBottom: 10 }}>
         {icon}
         <span style={{ fontSize: 13, fontWeight: 600, color: '#6B7280' }}>{label}</span>
       </div>
-      <p style={{ fontSize: 22, fontWeight: 800, color: '#111827', margin: 0 }}>₦{value.toLocaleString()}</p>
+      <p style={{ fontSize: 22, fontWeight: 800, color: '#111827', margin: 0 }}>{formatMoney(value, currency)}</p>
     </div>
   )
 }

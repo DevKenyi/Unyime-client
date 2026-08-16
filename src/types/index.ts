@@ -10,6 +10,7 @@ export interface AuthUser {
 
 export type PropertyStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
 export type PropertyType = 'APARTMENT' | 'HOUSE' | 'VILLA' | 'HOTEL' | 'ROOM'
+export type Country = 'NIGERIA' | 'SOUTH_AFRICA'
 
 export interface PropertyPhoto {
   id: string
@@ -25,6 +26,8 @@ export interface Property {
   slug: string
   description: string | null
   propertyType: PropertyType
+  country: Country
+  currency: string
   city: string
   address: string | null
   pricePerNight: number
@@ -89,6 +92,7 @@ export interface Booking {
   subtotal: number
   serviceCharge: number
   total: number
+  currency: string
   paymentReference: string
   status: BookingStatus
   createdAt: string
@@ -125,12 +129,14 @@ export interface HostEarningsSummary {
   totalPaidOut: number
   pendingPayoutAmount: number
   availableBalance: number
+  currency: string
 }
 
 export interface EarningsTransaction {
   bookingId: string
   propertyTitle: string
   amount: number
+  currency: string
   status: BookingStatus
   date: string
 }
@@ -168,8 +174,9 @@ export interface AdminDashboard {
   totalGuests: number
   totalProperties: number
   activeBookings: number
-  revenue: number
-  platformFees: number
+  /** Keyed by currency code (e.g. "NGN", "ZAR") — can't be summed across currencies. */
+  revenueByCurrency: Record<string, number>
+  platformFeesByCurrency: Record<string, number>
   pendingPayoutAmount: number
   cancellations: number
 }

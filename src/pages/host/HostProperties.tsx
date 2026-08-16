@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Plus, MapPin, Power, Trash2 } from 'lucide-react'
 import DashboardLayout from '../../components/DashboardLayout'
 import api from '../../api/axios'
+import { formatMoney } from '../../utils/currency'
 import type { Property, PropertyStatus } from '../../types'
 
 const STATUS_CFG: Record<PropertyStatus, { label: string; cls: string }> = {
@@ -88,7 +89,7 @@ export default function HostProperties() {
                     {!p.isActive && <span className="status-pill status-cancelled"><span className="status-dot" />Inactive</span>}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: '#6B7280', marginTop: 4 }}>
-                    <MapPin size={12} /> {p.city} · ₦{p.pricePerNight.toLocaleString()}/night
+                    <MapPin size={12} /> {p.city} · {formatMoney(p.pricePerNight, p.currency)}/night
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>

@@ -5,6 +5,7 @@ import {
   ShieldCheck, CalendarX2, MessageSquare,
 } from 'lucide-react'
 import api from '../api/axios'
+import { formatMoney } from '../utils/currency'
 import type { Property, PropertyAvailability, Review } from '../types'
 
 const FALLBACK_IMAGE = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="800" height="500"%3E%3Crect width="800" height="500" fill="%23E8F5F1"/%3E%3C/svg%3E'
@@ -188,12 +189,12 @@ export default function PropertyDetailPage() {
           <div>
             <div className="surface-card" style={{ padding: 20, position: 'sticky', top: 20 }}>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 4 }}>
-                <span style={{ fontSize: 22, fontWeight: 800, color: '#095C46' }}>₦{property.pricePerNight.toLocaleString()}</span>
+                <span style={{ fontSize: 22, fontWeight: 800, color: '#095C46' }}>{formatMoney(property.pricePerNight, property.currency)}</span>
                 <span style={{ fontSize: 13, color: '#6B7280' }}>/ night</span>
               </div>
               {property.cleaningFee != null && property.cleaningFee > 0 && (
                 <p style={{ fontSize: 12.5, color: '#6B7280', margin: '0 0 16px' }}>
-                  + ₦{property.cleaningFee.toLocaleString()} cleaning fee
+                  + {formatMoney(property.cleaningFee, property.currency)} cleaning fee
                 </p>
               )}
               <Link to={`/properties/${property.slug}/book`} className="btn btn-primary btn-lg" style={{ width: '100%', marginTop: 8 }}>

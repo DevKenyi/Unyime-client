@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import DashboardLayout from '../../components/DashboardLayout'
 import api from '../../api/axios'
+import { formatMoney } from '../../utils/currency'
 import type { Payout } from '../../types'
 
 export default function AdminPayouts() {
@@ -51,7 +52,7 @@ export default function AdminPayouts() {
                 padding: '14px 20px', borderBottom: i < payouts.length - 1 ? '1px solid #F3F4F6' : 'none',
               }}>
                 <div>
-                  <p style={{ fontSize: 15, fontWeight: 700, color: '#111827', margin: 0 }}>₦{p.amount.toLocaleString()}</p>
+                  <p style={{ fontSize: 15, fontWeight: 700, color: '#111827', margin: 0 }}>{formatMoney(p.amount, undefined)}</p>
                   <p style={{ fontSize: 12.5, color: '#9CA3AF', margin: '2px 0 0' }}>
                     Requested {new Date(p.requestedAt).toLocaleDateString()}
                   </p>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Home, Menu, X } from 'lucide-react'
+import CountrySwitcher from './CountrySwitcher'
 
 const LINKS = [
   { label: 'Explore stays', href: '/properties', isRoute: true },
@@ -49,6 +50,7 @@ export default function Nav() {
         </nav>
 
         <div className="landing-nav-links" style={{ alignItems: 'center', gap: 12 }}>
+          <CountrySwitcher />
           <Link to="/login" style={{ fontSize: 14.5, fontWeight: 600, color: '#111827', textDecoration: 'none' }}>
             Sign in
           </Link>
@@ -74,6 +76,9 @@ export default function Nav() {
             <button onClick={() => setMenuOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#111827' }} aria-label="Close menu">
               <X size={24} />
             </button>
+          </div>
+          <div style={{ padding: '4px 4px 14px', borderBottom: '1px solid #F3F4F6', marginBottom: 10 }}>
+            <CountrySwitcher fullWidth />
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             {LINKS.map(link => link.isRoute ? (

@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
+import { CountryProvider } from './contexts/CountryContext'
 import ProtectedRoute from './components/ProtectedRoute'
 
 import LandingPage         from './pages/LandingPage'
@@ -26,6 +27,7 @@ import AdminBookings       from './pages/admin/AdminBookings'
 
 export default function App() {
   return (
+    <CountryProvider>
     <AuthProvider>
       <BrowserRouter>
         <Routes>
@@ -114,5 +116,6 @@ export default function App() {
         </Routes>
       </BrowserRouter>
     </AuthProvider>
+    </CountryProvider>
   )
 }

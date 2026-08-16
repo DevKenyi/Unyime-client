@@ -6,6 +6,7 @@ import StatTile from '../../components/StatTile'
 import TrendChart from '../../components/charts/TrendChart'
 import api from '../../api/axios'
 import { groupSumByDay } from '../../utils/chartData'
+import { formatMoney } from '../../utils/currency'
 import type { Booking, EarningsTransaction, HostEarningsSummary, KycStatusInfo, Property } from '../../types'
 
 function timeAgo(dateStr: string) {
@@ -95,7 +96,7 @@ export default function HostDashboard() {
                 <StatTile icon={<ClipboardList size={16} />} label="Upcoming bookings" value={upcoming} />
               </Link>
               <Link to="/host/earnings" style={{ textDecoration: 'none' }}>
-                <StatTile icon={<Wallet size={16} />} label="Available balance" value={`₦${(earnings?.availableBalance ?? 0).toLocaleString()}`} accent />
+                <StatTile icon={<Wallet size={16} />} label="Available balance" value={formatMoney(earnings?.availableBalance ?? 0, earnings?.currency)} accent />
               </Link>
             </div>
 
@@ -104,7 +105,7 @@ export default function HostDashboard() {
                 <TrendingUp size={16} color="#095C46" />
                 <h2 style={{ fontSize: 15, fontWeight: 700, color: '#111827', margin: 0 }}>Earnings, last 14 days</h2>
               </div>
-              <TrendChart data={earningsTrend} formatValue={v => `₦${v.toLocaleString()}`} />
+              <TrendChart data={earningsTrend} formatValue={v => formatMoney(v, earnings?.currency)} />
             </div>
 
             <div className="surface-card" style={{ padding: 20 }}>

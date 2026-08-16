@@ -3,9 +3,14 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { Search, Home, ArrowLeft } from 'lucide-react'
 import api from '../api/axios'
 import PropertyCard from '../components/PropertyCard'
-import type { Property } from '../types'
+import { useCountry } from '../contexts/CountryContext'
+import { currencySymbol } from '../utils/currency'
+import type { Country, Property } from '../types'
+
+const COUNTRY_CURRENCY: Record<Country, string> = { NIGERIA: 'NGN', SOUTH_AFRICA: 'ZAR' }
 
 export default function DiscoverPage() {
+  const { country } = useCountry()
   const [searchParams, setSearchParams] = useSearchParams()
   const [city, setCity] = useState(searchParams.get('city') ?? '')
   const [guests, setGuests] = useState(searchParams.get('guests') ?? '')
@@ -16,7 +21,7 @@ export default function DiscoverPage() {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    const params: Record<string, string> = {}
+    const params: Record<string, string> = { country }
     const c = searchParams.get('city')
     const g = searchParams.get('guests')
     const min = searchParams.get('minPrice')
@@ -35,7 +40,7 @@ export default function DiscoverPage() {
       })
       .catch(() => setError('Could not load properties. Please try again.'))
       .finally(() => setLoading(false))
-  }, [searchParams])
+  }, [searchParams, country])
 
   const handleSearch = (e: FormEvent) => {
     e.preventDefault()
@@ -68,11 +73,11 @@ export default function DiscoverPage() {
               onChange={e => setGuests(e.target.value)} style={{ width: 100 }}
             />
             <input
-              className="input" type="number" min={0} placeholder="Min ₦/night" value={minPrice}
+              className="input" type="number" min={0} placeholder={`Min ${currencySymbol(COUNTRY_CURRENCY[country])}/night`} value={minPrice}
               onChange={e => setMinPrice(e.target.value)} style={{ width: 130 }}
             />
             <input
-              className="input" type="number" min={0} placeholder="Max ₦/night" value={maxPrice}
+              className="input" type="number" min={0} placeholder={`Max ${currencySymbol(COUNTRY_CURRENCY[country])}/night`} value={maxPrice}
               onChange={e => setMaxPrice(e.target.value)} style={{ width: 130 }}
             />
             <button type="submit" className="btn btn-primary btn-md">

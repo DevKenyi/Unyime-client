@@ -1,5 +1,5 @@
 import { Building2, Home, Hotel, TreePine, User } from 'lucide-react'
-import { PROPERTY_TYPE_OPTIONS, type StepProps } from './wizardTypes'
+import { COUNTRY_OPTIONS, PROPERTY_TYPE_OPTIONS, type StepProps } from './wizardTypes'
 import type { PropertyType } from '../../../types'
 
 const TYPE_ICONS: Record<PropertyType, typeof Home> = {
@@ -24,6 +24,25 @@ export default function StepAbout({ state, update }: StepProps) {
           className="input" placeholder="Modern 2 Bedroom Apartment"
           value={state.title} onChange={e => update('title', e.target.value)}
         />
+      </div>
+
+      <div className="form-group">
+        <label>Country</label>
+        <div className="type-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
+          {COUNTRY_OPTIONS.map(opt => (
+            <button
+              key={opt.value} type="button"
+              className={`type-chip${state.country === opt.value ? ' is-selected' : ''}`}
+              onClick={() => update('country', opt.value)}
+            >
+              <span style={{ fontSize: 20 }}>{opt.flag}</span>
+              {opt.label}
+            </button>
+          ))}
+        </div>
+        <p style={{ fontSize: 12, color: '#9CA3AF', margin: '6px 0 0' }}>
+          Sets the currency guests will pay in for this listing.
+        </p>
       </div>
 
       <div className="form-group">

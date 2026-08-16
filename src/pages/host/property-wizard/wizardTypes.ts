@@ -1,4 +1,4 @@
-import type { PropertyType } from '../../../types'
+import type { Country, PropertyType } from '../../../types'
 
 export interface WizardPhoto {
   /** null until this photo has been persisted to the backend. */
@@ -10,6 +10,7 @@ export interface WizardPhoto {
 export interface WizardState {
   title: string
   propertyType: PropertyType
+  country: Country
   description: string
   city: string
   address: string
@@ -28,6 +29,7 @@ export interface WizardState {
 export const EMPTY_WIZARD_STATE: WizardState = {
   title: '',
   propertyType: 'APARTMENT',
+  country: 'NIGERIA',
   description: '',
   city: '',
   address: '',
@@ -50,6 +52,16 @@ export const PROPERTY_TYPE_OPTIONS: { value: PropertyType; label: string }[] = [
   { value: 'HOTEL', label: 'Hotel' },
   { value: 'ROOM', label: 'Room' },
 ]
+
+export const COUNTRY_OPTIONS: { value: Country; label: string; flag: string }[] = [
+  { value: 'NIGERIA', label: 'Nigeria', flag: '🇳🇬' },
+  { value: 'SOUTH_AFRICA', label: 'South Africa', flag: '🇿🇦' },
+]
+
+export const CURRENCY_BY_COUNTRY: Record<Country, string> = {
+  NIGERIA: 'NGN',
+  SOUTH_AFRICA: 'ZAR',
+}
 
 export const AMENITY_OPTIONS = [
   'Wi-Fi', 'Parking', 'Pool', 'Generator', 'Air conditioning',

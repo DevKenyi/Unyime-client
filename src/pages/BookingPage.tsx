@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ArrowLeft, Calendar, Users, User, Phone } from 'lucide-react'
 import api from '../api/axios'
+import { formatMoney } from '../utils/currency'
 import type { CreateBookingResult, Property } from '../types'
 
 const SERVICE_CHARGE_RATE = 0.10
@@ -158,11 +159,11 @@ export default function BookingPage() {
               <p style={{ fontSize: 13, color: '#6B7280', margin: '0 0 10px', fontWeight: 600 }}>
                 Price breakdown · {nights} night{nights === 1 ? '' : 's'}
               </p>
-              <Row label={`₦${property.pricePerNight.toLocaleString()} × ${nights} night${nights === 1 ? '' : 's'}`} value={pricing.nightlySubtotal} />
-              {pricing.cleaningFee > 0 && <Row label="Cleaning fee" value={pricing.cleaningFee} />}
-              <Row label="Service charge" value={pricing.serviceCharge} />
+              <Row label={`${formatMoney(property.pricePerNight, property.currency)} × ${nights} night${nights === 1 ? '' : 's'}`} value={pricing.nightlySubtotal} currency={property.currency} />
+              {pricing.cleaningFee > 0 && <Row label="Cleaning fee" value={pricing.cleaningFee} currency={property.currency} />}
+              <Row label="Service charge" value={pricing.serviceCharge} currency={property.currency} />
               <div style={{ borderTop: '1px solid #E5E7EB', marginTop: 8, paddingTop: 8 }}>
-                <Row label="Total" value={pricing.total} bold />
+                <Row label="Total" value={pricing.total} currency={property.currency} bold />
               </div>
             </div>
           )}
@@ -182,11 +183,11 @@ export default function BookingPage() {
   )
 }
 
-function Row({ label, value, bold }: { label: string; value: number; bold?: boolean }) {
+function Row({ label, value, currency, bold }: { label: string; value: number; currency: string; bold?: boolean }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: bold ? 15 : 13.5, fontWeight: bold ? 800 : 400, color: bold ? '#111827' : '#374151', marginBottom: 6 }}>
       <span>{label}</span>
-      <span>₦{value.toLocaleString()}</span>
+      <span>{formatMoney(value, currency)}</span>
     </div>
   )
 }

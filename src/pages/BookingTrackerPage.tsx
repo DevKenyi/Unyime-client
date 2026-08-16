@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { ArrowLeft, Calendar, Users, Home, Star } from 'lucide-react'
 import api from '../api/axios'
 import StatusPill from '../components/StatusPill'
+import { formatMoney } from '../utils/currency'
 import type { Booking, BookingStatus } from '../types'
 
 const CANCELLABLE: BookingStatus[] = ['PENDING_PAYMENT', 'CONFIRMED']
@@ -127,11 +128,11 @@ export default function BookingTrackerPage() {
           </div>
 
           <div className="surface-muted" style={{ padding: 16, marginTop: 16 }}>
-            <Row label={`₦${booking.pricePerNightSnapshot.toLocaleString()} × ${booking.nights} night${booking.nights === 1 ? '' : 's'}`} value={booking.pricePerNightSnapshot * booking.nights} />
-            {booking.cleaningFee > 0 && <Row label="Cleaning fee" value={booking.cleaningFee} />}
-            <Row label="Service charge" value={booking.serviceCharge} />
+            <Row label={`${formatMoney(booking.pricePerNightSnapshot, booking.currency)} × ${booking.nights} night${booking.nights === 1 ? '' : 's'}`} value={booking.pricePerNightSnapshot * booking.nights} currency={booking.currency} />
+            {booking.cleaningFee > 0 && <Row label="Cleaning fee" value={booking.cleaningFee} currency={booking.currency} />}
+            <Row label="Service charge" value={booking.serviceCharge} currency={booking.currency} />
             <div style={{ borderTop: '1px solid #E5E7EB', marginTop: 8, paddingTop: 8 }}>
-              <Row label="Total" value={booking.total} bold />
+              <Row label="Total" value={booking.total} currency={booking.currency} bold />
             </div>
           </div>
 
@@ -197,11 +198,11 @@ export default function BookingTrackerPage() {
   )
 }
 
-function Row({ label, value, bold }: { label: string; value: number; bold?: boolean }) {
+function Row({ label, value, currency, bold }: { label: string; value: number; currency: string; bold?: boolean }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: bold ? 15 : 13.5, fontWeight: bold ? 800 : 400, color: bold ? '#111827' : '#374151', marginBottom: 6 }}>
       <span>{label}</span>
-      <span>₦{value.toLocaleString()}</span>
+      <span>{formatMoney(value, currency)}</span>
     </div>
   )
 }

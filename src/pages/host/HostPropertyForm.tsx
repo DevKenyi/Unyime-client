@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { CheckCircle2, Plus, Trash2 } from 'lucide-react'
 import DashboardLayout from '../../components/DashboardLayout'
 import api from '../../api/axios'
+import { useCountry } from '../../contexts/CountryContext'
 import type { BlockedDate, Property, PropertyPhoto } from '../../types'
 import { EMPTY_WIZARD_STATE, type WizardPhoto, type WizardState } from './property-wizard/wizardTypes'
 import ListingPreviewCard from './property-wizard/ListingPreviewCard'
@@ -41,8 +42,9 @@ export default function HostPropertyForm() {
   const { propertyId } = useParams<{ propertyId: string }>()
   const isEdit = !!propertyId
   const navigate = useNavigate()
+  const { country: browsingCountry } = useCountry()
 
-  const [state, setState] = useState<WizardState>(EMPTY_WIZARD_STATE)
+  const [state, setState] = useState<WizardState>(() => isEdit ? EMPTY_WIZARD_STATE : { ...EMPTY_WIZARD_STATE, country: browsingCountry })
   const [originalPhotos, setOriginalPhotos] = useState<WizardPhoto[]>([])
   const [step, setStep] = useState(0)
   const [maxReached, setMaxReached] = useState(0)
@@ -68,6 +70,7 @@ export default function HostPropertyForm() {
         setState({
           title: p.title,
           propertyType: p.propertyType,
+          country: p.country,
           description: p.description ?? '',
           city: p.city,
           address: p.address ?? '',
@@ -109,6 +112,7 @@ export default function HostPropertyForm() {
       title: state.title,
       description: state.description || null,
       propertyType: state.propertyType,
+      country: state.country,
       city: state.city,
       address: state.address || null,
       pricePerNight: Number(state.pricePerNight),

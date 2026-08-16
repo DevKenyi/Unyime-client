@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { MapPin, Users, Star, Heart } from 'lucide-react'
 import PlaceholderImage from './landing/PlaceholderImage'
 import { IMAGES } from './landing/images'
+import { formatMoney } from '../utils/currency'
 import type { Property } from '../types'
 
 const FAVORITES_KEY = 'unyimi_favorites'
@@ -81,7 +82,7 @@ export default function PropertyCard({ property }: { property: Property }) {
 
         <div style={{ marginTop: 10, display: 'flex', alignItems: 'baseline', gap: 4 }}>
           <span style={{ fontSize: 16, fontWeight: 800, color: '#095C46' }}>
-            ₦{property.pricePerNight.toLocaleString()}
+            {formatMoney(property.pricePerNight, property.currency)}
           </span>
           <span style={{ fontSize: 12.5, color: '#6B7280' }}>/ night</span>
         </div>
