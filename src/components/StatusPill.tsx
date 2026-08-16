@@ -7,6 +7,7 @@ const CONFIG: Record<string, { label: string; cls: string }> = {
   COMPLETED:       { label: 'Completed',       cls: 'status-delivered' },
   CANCELLED:       { label: 'Cancelled',       cls: 'status-cancelled' },
   FAILED:          { label: 'Failed',          cls: 'status-failed'    },
+  EXPIRED:         { label: 'Expired',         cls: 'status-cancelled' },
 }
 
 export default function StatusPill({ status }: { status: BookingStatus | string }) {

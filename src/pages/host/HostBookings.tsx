@@ -75,6 +75,12 @@ export default function HostBookings() {
                   </div>
                 </div>
 
+                {b.status === 'PENDING_PAYMENT' && b.expiresAt && (
+                  <p style={{ fontSize: 12, color: '#92400E', margin: '8px 0 0' }}>
+                    Payment pending — not guaranteed revenue yet. Hold expires {new Date(b.expiresAt).toLocaleTimeString('en-NG', { hour: 'numeric', minute: '2-digit' })}.
+                  </p>
+                )}
+
                 {(NEXT_STATUS[b.status]?.length ?? 0) > 0 && (
                   <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
                     {NEXT_STATUS[b.status]!.map(action => (

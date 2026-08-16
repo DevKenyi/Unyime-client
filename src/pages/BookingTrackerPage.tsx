@@ -1,12 +1,47 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { ArrowLeft, Calendar, Users, Home, Star } from 'lucide-react'
+import { ArrowLeft, Calendar, Users, Home, Star, Clock, XCircle } from 'lucide-react'
 import api from '../api/axios'
 import StatusPill from '../components/StatusPill'
 import { formatMoney } from '../utils/currency'
 import type { Booking, BookingStatus } from '../types'
 
 const CANCELLABLE: BookingStatus[] = ['PENDING_PAYMENT', 'CONFIRMED']
+
+function formatCountdown(remainingMs: number): string {
+  const totalSeconds = Math.max(0, Math.floor(remainingMs / 1000))
+  const h = Math.floor(totalSeconds / 3600)
+  const m = Math.floor((totalSeconds % 3600) / 60)
+  const s = totalSeconds % 60
+  return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+}
+
+/** Ticks every second purely for display — the countdown's source of truth is always the
+ * server's expiresAt, never a locally-invented timer, and once it hits zero we re-fetch the
+ * booking from the backend rather than assume it expired (the scheduled job is the real authority). */
+function useCountdown(expiresAt: string | null, onExpire: () => void) {
+  const [now, setNow] = useState(() => Date.now())
+  const firedRef = useRef(false)
+
+  useEffect(() => {
+    if (!expiresAt) return
+    firedRef.current = false
+    const interval = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(interval)
+  }, [expiresAt])
+
+  const remainingMs = expiresAt ? new Date(expiresAt).getTime() - now : 0
+
+  useEffect(() => {
+    if (expiresAt && remainingMs <= 0 && !firedRef.current) {
+      firedRef.current = true
+      onExpire()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [remainingMs, expiresAt])
+
+  return remainingMs
+}
 
 export default function BookingTrackerPage() {
   const { bookingId } = useParams<{ bookingId: string }>()
@@ -16,6 +51,9 @@ export default function BookingTrackerPage() {
 
   const [cancelling, setCancelling] = useState(false)
   const [cancelError, setCancelError] = useState('')
+
+  const [payingAgain, setPayingAgain] = useState(false)
+  const [payError, setPayError] = useState('')
 
   const [rating, setRating] = useState(5)
   const [comment, setComment] = useState('')
@@ -44,6 +82,21 @@ export default function BookingTrackerPage() {
     return () => source.close()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookingId])
+
+  const remainingMs = useCountdown(booking?.expiresAt ?? null, fetchBooking)
+
+  const handlePayAgain = async () => {
+    if (!bookingId) return
+    setPayingAgain(true)
+    setPayError('')
+    try {
+      const { data } = await api.post<{ paymentLink: string }>('/api/payments/initiate', { bookingId })
+      window.location.href = data.paymentLink
+    } catch (err: any) {
+      setPayError(err.response?.data?.error ?? 'Could not start payment — please try again.')
+      setPayingAgain(false)
+    }
+  }
 
   const handleCancel = async () => {
     if (!bookingId || !confirm('Cancel this booking?')) return
@@ -137,9 +190,34 @@ export default function BookingTrackerPage() {
           </div>
 
           {booking.status === 'PENDING_PAYMENT' && (
-            <p style={{ fontSize: 13, color: '#92400E', background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: 10, padding: '10px 14px', marginTop: 16 }}>
-              Waiting for payment confirmation. This page updates automatically once your payment clears.
-            </p>
+            <div style={{ background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: 10, padding: '14px', marginTop: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                <Clock size={16} color="#92400E" />
+                <span style={{ fontSize: 13.5, fontWeight: 700, color: '#92400E' }}>
+                  Your reservation is held for {formatCountdown(remainingMs)}
+                </span>
+              </div>
+              <p style={{ fontSize: 12.5, color: '#92400E', margin: '0 0 12px' }}>
+                Complete payment before the timer runs out to secure your stay — after that, these dates go back on the market.
+              </p>
+              {payError && <p style={{ color: '#DC2626', fontSize: 13, marginBottom: 10 }}>{payError}</p>}
+              <button className="btn btn-primary btn-md" onClick={handlePayAgain} disabled={payingAgain}>
+                {payingAgain ? <span className="spinner" /> : 'Complete payment'}
+              </button>
+            </div>
+          )}
+
+          {booking.status === 'EXPIRED' && (
+            <div style={{ background: '#F3F4F6', border: '1px solid #E5E7EB', borderRadius: 10, padding: '14px', marginTop: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                <XCircle size={16} color="#6B7280" />
+                <span style={{ fontSize: 13.5, fontWeight: 700, color: '#374151' }}>Reservation expired</span>
+              </div>
+              <p style={{ fontSize: 12.5, color: '#6B7280', margin: '0 0 12px' }}>
+                The payment window closed before payment was completed. These dates have been released and may no longer be available — you'll need to make a new booking.
+              </p>
+              <Link to="/properties" className="btn btn-secondary btn-md">Search for available dates</Link>
+            </div>
           )}
 
           {booking.refundStatus === 'PENDING' && (

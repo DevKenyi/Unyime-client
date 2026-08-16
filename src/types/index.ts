@@ -74,6 +74,7 @@ export type BookingStatus =
   | 'COMPLETED'
   | 'CANCELLED'
   | 'FAILED'
+  | 'EXPIRED'
 
 export type RefundStatus = 'NONE' | 'PENDING' | 'PROCESSED'
 
@@ -99,6 +100,8 @@ export interface Booking {
   paidAt: string | null
   refundStatus: RefundStatus
   refundedAt: string | null
+  /** Only set while status is PENDING_PAYMENT — when the payment hold expires. */
+  expiresAt: string | null
 }
 
 export interface CreateBookingResult {
