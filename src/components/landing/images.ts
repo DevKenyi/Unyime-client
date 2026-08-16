@@ -19,9 +19,7 @@ export const IMAGES = {
   destPh: 'https://images.unsplash.com/photo-1580674684081-7617fbf3d745?w=800&q=80',
   destIbadan: 'https://images.unsplash.com/photo-1590073242678-70ee3fc28e8e?w=800&q=80',
   destEnugu: 'https://images.unsplash.com/photo-1596178065887-1198b6148b2b?w=800&q=80',
-  guest1: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80',
   guest2: 'https://images.unsplash.com/photo-1529636798458-92182e662485?w=800&q=80',
-  guest3: 'https://images.unsplash.com/photo-1540541338287-41700207dee6?w=800&q=80',
   hostMain: 'https://images.unsplash.com/photo-1560185007-cde436f6a4d0?w=1000&q=80',
   finalCTA: 'https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?w=1400&q=80',
 } as const

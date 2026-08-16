@@ -2,7 +2,6 @@ import Nav from '../components/landing/Nav'
 import Hero from '../components/landing/Hero'
 import FeaturedStays from '../components/landing/FeaturedStays'
 import Destinations from '../components/landing/Destinations'
-import GuestExperience from '../components/landing/GuestExperience'
 import HowItWorks from '../components/landing/HowItWorks'
 import TrustSection from '../components/landing/TrustSection'
 import HostCTA from '../components/landing/HostCTA'
@@ -17,7 +16,6 @@ export default function LandingPage() {
       <Hero />
       <FeaturedStays />
       <Destinations />
-      <GuestExperience />
       <HowItWorks />
       <TrustSection />
       <HostCTA />
