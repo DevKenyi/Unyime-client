@@ -4,6 +4,7 @@ const CONFIG: Record<string, { label: string; cls: string }> = {
   PENDING_PAYMENT: { label: 'Pending Payment', cls: 'status-pending'   },
   CONFIRMED:       { label: 'Confirmed',       cls: 'status-paid'      },
   CHECKED_IN:      { label: 'Checked In',      cls: 'status-preparing' },
+  CHECKED_OUT:     { label: 'Checked Out',     cls: 'status-ready'     },
   COMPLETED:       { label: 'Completed',       cls: 'status-delivered' },
   CANCELLED:       { label: 'Cancelled',       cls: 'status-cancelled' },
   FAILED:          { label: 'Failed',          cls: 'status-failed'    },

@@ -42,11 +42,15 @@ export interface Property {
   coverImageUrl: string | null
   isActive: boolean
   status: PropertyStatus
+  /** Whether the unit is physically ready right now — separate from the approval status above. */
+  operationalStatus: PropertyOperationalStatus
   createdAt: string
   photos: PropertyPhoto[] | null
   averageRating: number | null
   reviewCount: number
 }
+
+export type PropertyOperationalStatus = 'AVAILABLE' | 'CLEANING' | 'READY' | 'MAINTENANCE'
 
 export interface UnavailableDateRange {
   startDate: string
@@ -71,6 +75,7 @@ export type BookingStatus =
   | 'PENDING_PAYMENT'
   | 'CONFIRMED'
   | 'CHECKED_IN'
+  | 'CHECKED_OUT'
   | 'COMPLETED'
   | 'CANCELLED'
   | 'FAILED'
@@ -98,6 +103,7 @@ export interface Booking {
   status: BookingStatus
   createdAt: string
   paidAt: string | null
+  checkedOutAt: string | null
   refundStatus: RefundStatus
   refundedAt: string | null
   /** Only set while status is PENDING_PAYMENT — when the payment hold expires. */
@@ -189,5 +195,37 @@ export interface AdminUser {
   email: string
   role: Role
   enabled: boolean
+  createdAt: string
+}
+
+// ── Cleaning ─────────────────────────────────────────────────────────────
+
+export type CleaningTaskStatus = 'PENDING' | 'ASSIGNED' | 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED'
+export type CleaningTaskType = 'TURNOVER' | 'STAY'
+
+export interface Cleaner {
+  id: string
+  name: string
+  phone: string | null
+  active: boolean
+}
+
+export interface CleaningTask {
+  id: string
+  propertyId: string
+  propertyTitle: string
+  bookingId: string | null
+  guestName: string | null
+  checkedOutAt: string | null
+  cleanerId: string | null
+  cleanerName: string | null
+  type: CleaningTaskType
+  status: CleaningTaskStatus
+  scheduledDate: string | null
+  startTime: string | null
+  endTime: string | null
+  startedAt: string | null
+  completedAt: string | null
+  notes: string | null
   createdAt: string
 }

@@ -15,15 +15,17 @@ function formatByCurrency(byCurrency: Record<string, number>): string {
   return entries.map(([currency, amount]) => formatMoney(amount, currency)).join(' · ')
 }
 
-const PAID_STATUSES: BookingStatus[] = ['CONFIRMED', 'CHECKED_IN', 'COMPLETED']
+const PAID_STATUSES: BookingStatus[] = ['CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT', 'COMPLETED']
 
 const STATUS_ORDER: { status: BookingStatus; label: string; color: string }[] = [
   { status: 'PENDING_PAYMENT', label: 'Pending payment', color: '#D97706' },
   { status: 'CONFIRMED',       label: 'Confirmed',       color: '#059669' },
   { status: 'CHECKED_IN',      label: 'Checked in',      color: '#2563EB' },
+  { status: 'CHECKED_OUT',     label: 'Checked out',     color: '#7C3AED' },
   { status: 'COMPLETED',       label: 'Completed',       color: '#10B981' },
   { status: 'CANCELLED',       label: 'Cancelled',       color: '#EF4444' },
   { status: 'FAILED',          label: 'Failed',          color: '#DC2626' },
+  { status: 'EXPIRED',         label: 'Expired',         color: '#9CA3AF' },
 ]
 
 export default function AdminDashboard() {

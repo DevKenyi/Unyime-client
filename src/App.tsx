@@ -15,6 +15,7 @@ import HostDashboard       from './pages/host/HostDashboard'
 import HostProperties      from './pages/host/HostProperties'
 import HostPropertyForm    from './pages/host/HostPropertyForm'
 import HostBookings        from './pages/host/HostBookings'
+import HostCleaning        from './pages/host/HostCleaning'
 import HostEarnings        from './pages/host/HostEarnings'
 import HostKyc              from './pages/host/HostKyc'
 
@@ -65,6 +66,11 @@ export default function App() {
           <Route path="/host/bookings" element={
             <ProtectedRoute allowedRoles={['HOST', 'ADMIN']}>
               <HostBookings />
+            </ProtectedRoute>
+          } />
+          <Route path="/host/cleaning" element={
+            <ProtectedRoute allowedRoles={['HOST', 'ADMIN']}>
+              <HostCleaning />
             </ProtectedRoute>
           } />
           <Route path="/host/earnings" element={

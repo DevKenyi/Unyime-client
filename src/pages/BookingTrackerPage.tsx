@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { ArrowLeft, Calendar, Users, Home, Star, Clock, XCircle } from 'lucide-react'
+import { ArrowLeft, Calendar, Users, Home, Star, Clock, XCircle, CheckCircle2, DoorOpen } from 'lucide-react'
 import api from '../api/axios'
 import StatusPill from '../components/StatusPill'
 import { formatMoney } from '../utils/currency'
@@ -55,6 +55,9 @@ export default function BookingTrackerPage() {
   const [payingAgain, setPayingAgain] = useState(false)
   const [payError, setPayError] = useState('')
 
+  const [checkingOut, setCheckingOut] = useState(false)
+  const [checkoutError, setCheckoutError] = useState('')
+
   const [rating, setRating] = useState(5)
   const [comment, setComment] = useState('')
   const [reviewSubmitting, setReviewSubmitting] = useState(false)
@@ -95,6 +98,20 @@ export default function BookingTrackerPage() {
     } catch (err: any) {
       setPayError(err.response?.data?.error ?? 'Could not start payment — please try again.')
       setPayingAgain(false)
+    }
+  }
+
+  const handleConfirmCheckout = async () => {
+    if (!bookingId) return
+    setCheckingOut(true)
+    setCheckoutError('')
+    try {
+      const { data } = await api.post<Booking>(`/api/public/bookings/${bookingId}/checkout`)
+      setBooking(data)
+    } catch (err: any) {
+      setCheckoutError(err.response?.data?.error ?? 'Could not confirm checkout.')
+    } finally {
+      setCheckingOut(false)
     }
   }
 
@@ -220,6 +237,32 @@ export default function BookingTrackerPage() {
             </div>
           )}
 
+          {booking.status === 'CHECKED_IN' && new Date() >= new Date(booking.checkOutDate + 'T00:00:00') && (
+            <div style={{ background: '#EDE9FE', border: '1px solid #C4B5FD', borderRadius: 10, padding: '14px', marginTop: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                <DoorOpen size={16} color="#5B21B6" />
+                <span style={{ fontSize: 13.5, fontWeight: 700, color: '#5B21B6' }}>Ready to leave?</span>
+              </div>
+              <p style={{ fontSize: 12.5, color: '#5B21B6', margin: '0 0 12px' }}>
+                Please confirm when you've left the property so the host can prepare it for the next guest.
+              </p>
+              {checkoutError && <p style={{ color: '#DC2626', fontSize: 13, marginBottom: 10 }}>{checkoutError}</p>}
+              <button className="btn btn-primary btn-md" onClick={handleConfirmCheckout} disabled={checkingOut}>
+                {checkingOut ? <span className="spinner" /> : "I've checked out"}
+              </button>
+            </div>
+          )}
+
+          {booking.status === 'CHECKED_OUT' && (
+            <div style={{ background: '#E8F5F1', border: '1px solid #6EE7B7', borderRadius: 10, padding: '14px', marginTop: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                <CheckCircle2 size={16} color="#065F46" />
+                <span style={{ fontSize: 13.5, fontWeight: 700, color: '#065F46' }}>You're checked out</span>
+              </div>
+              <p style={{ fontSize: 12.5, color: '#065F46', margin: 0 }}>Thanks for staying with Unyimi.</p>
+            </div>
+          )}
+
           {booking.refundStatus === 'PENDING' && (
             <p style={{ fontSize: 13, color: '#92400E', background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: 10, padding: '10px 14px', marginTop: 16 }}>
               A refund is pending for this booking.
@@ -236,7 +279,7 @@ export default function BookingTrackerPage() {
           )}
         </div>
 
-        {booking.status === 'COMPLETED' && !reviewSubmitted && (
+        {(booking.status === 'CHECKED_OUT' || booking.status === 'COMPLETED') && !reviewSubmitted && (
           <form onSubmit={handleReview} className="surface-card" style={{ padding: 24 }}>
             <h2 style={{ fontSize: 16, fontWeight: 700, color: '#111827', margin: '0 0 14px' }}>Leave a review</h2>
             <div className="form-group">

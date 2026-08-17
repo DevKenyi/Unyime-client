@@ -4,12 +4,19 @@ import { Plus, MapPin, Power, Trash2 } from 'lucide-react'
 import DashboardLayout from '../../components/DashboardLayout'
 import api from '../../api/axios'
 import { formatMoney } from '../../utils/currency'
-import type { Property, PropertyStatus } from '../../types'
+import type { Property, PropertyOperationalStatus, PropertyStatus } from '../../types'
 
 const STATUS_CFG: Record<PropertyStatus, { label: string; cls: string }> = {
   PENDING:  { label: 'Pending review', cls: 'status-pending' },
   APPROVED: { label: 'Approved',       cls: 'status-delivered' },
   REJECTED: { label: 'Rejected',       cls: 'status-cancelled' },
+}
+
+/** AVAILABLE is the common case — only flag the states that need a host's attention. */
+const OPERATIONAL_CFG: Partial<Record<PropertyOperationalStatus, { label: string; cls: string }>> = {
+  CLEANING:    { label: 'Cleaning',    cls: 'status-preparing' },
+  READY:       { label: 'Ready',       cls: 'status-delivered' },
+  MAINTENANCE: { label: 'Maintenance', cls: 'status-cancelled' },
 }
 
 export default function HostProperties() {
@@ -87,6 +94,11 @@ export default function HostProperties() {
                       <span className="status-dot" />{STATUS_CFG[p.status].label}
                     </span>
                     {!p.isActive && <span className="status-pill status-cancelled"><span className="status-dot" />Inactive</span>}
+                    {OPERATIONAL_CFG[p.operationalStatus] && (
+                      <span className={`status-pill ${OPERATIONAL_CFG[p.operationalStatus]!.cls}`}>
+                        <span className="status-dot" />{OPERATIONAL_CFG[p.operationalStatus]!.label}
+                      </span>
+                    )}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: '#6B7280', marginTop: 4 }}>
                     <MapPin size={12} /> {p.city} · {formatMoney(p.pricePerNight, p.currency)}/night

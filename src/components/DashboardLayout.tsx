@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useState, type ReactNode } from 'react'
 import {
   LayoutDashboard, ClipboardList, Home, Wallet,
-  Users, ShieldCheck, Banknote, LogOut, Menu, X, BadgeCheck,
+  Users, ShieldCheck, Banknote, LogOut, Menu, X, BadgeCheck, Sparkles,
 } from 'lucide-react'
 
 interface NavItem { label: string; to: string; icon: ReactNode }
@@ -12,6 +12,7 @@ const HOST_NAV: NavItem[] = [
   { label: 'Dashboard',  to: '/host/dashboard',  icon: <LayoutDashboard size={17} /> },
   { label: 'Properties', to: '/host/properties', icon: <Home size={17} /> },
   { label: 'Bookings',   to: '/host/bookings',   icon: <ClipboardList size={17} /> },
+  { label: 'Cleaning',   to: '/host/cleaning',   icon: <Sparkles size={17} /> },
   { label: 'Earnings',   to: '/host/earnings',   icon: <Wallet size={17} /> },
   { label: 'Verification', to: '/host/kyc',      icon: <BadgeCheck size={17} /> },
 ]

@@ -8,7 +8,9 @@ import type { Booking, BookingStatus, Property, Review } from '../../types'
 
 const NEXT_STATUS: Partial<Record<BookingStatus, { label: string; status: BookingStatus }[]>> = {
   CONFIRMED:  [{ label: 'Check in', status: 'CHECKED_IN' }, { label: 'Cancel', status: 'CANCELLED' }],
-  CHECKED_IN: [{ label: 'Complete', status: 'COMPLETED' }],
+  // Guests confirm their own checkout from the booking tracker page — this is the fallback for
+  // when they forget, which also creates the turnover cleaning task.
+  CHECKED_IN: [{ label: 'Confirm guest checked out', status: 'CHECKED_OUT' }],
   PENDING_PAYMENT: [{ label: 'Cancel', status: 'CANCELLED' }],
 }
 
