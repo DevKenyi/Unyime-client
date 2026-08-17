@@ -1,21 +1,38 @@
+import { useMemo } from 'react'
 import { DayPicker, type DateRange } from 'react-day-picker'
+import type { Matcher } from 'react-day-picker'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useMediaQuery } from '../hooks/useMediaQuery'
+import { getLatestValidCheckout, getOccupiedNightMatchers, type UnavailableRange } from '../utils/availability'
 
 interface Props {
   selected: DateRange | undefined
   onSelect: (range: DateRange | undefined) => void
-  /** Booked/blocked/held date ranges from the property's real availability — never hardcoded. */
-  unavailableRanges: { from: Date; to: Date }[]
+  /** Booked/held/blocked date ranges from the property's real availability — never hardcoded. */
+  unavailableRanges: UnavailableRange[]
 }
 
 /**
  * A fully custom skin over react-day-picker — none of the library's own CSS is loaded, every
  * visual state below (day cells, range highlighting, nav, weekday header) is Unyimi's own styling
  * driven purely through the `classNames` map, so nothing here falls back to the library's default look.
+ *
+ * Once a check-in date is picked (selected.from set, selected.to not yet), every date beyond the
+ * next occupied night is disabled too — not just the occupied nights themselves. Native `disabled`
+ * buttons can't be clicked, so the guest can never construct a range that crosses a booked/held
+ * period, and the range highlight can never span invalid dates.
  */
 export default function DateRangeCalendar({ selected, onSelect, unavailableRanges }: Props) {
   const isDesktop = useMediaQuery('(min-width: 860px)')
+
+  const disabled = useMemo(() => {
+    const matchers: Matcher[] = [{ before: new Date() }, ...getOccupiedNightMatchers(unavailableRanges)]
+    if (selected?.from && !selected?.to) {
+      const boundary = getLatestValidCheckout(selected.from, unavailableRanges)
+      if (boundary) matchers.push({ after: boundary })
+    }
+    return matchers
+  }, [selected, unavailableRanges])
 
   return (
     <DayPicker
@@ -23,7 +40,7 @@ export default function DateRangeCalendar({ selected, onSelect, unavailableRange
       numberOfMonths={isDesktop ? 2 : 1}
       selected={selected}
       onSelect={onSelect}
-      disabled={[{ before: new Date() }, ...unavailableRanges]}
+      disabled={disabled}
       animate
       classNames={{
         root: 'uy-cal',

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import type { DateRange } from 'react-day-picker'
 import { ArrowLeft, Users, User, Phone, Star, MapPin } from 'lucide-react'
@@ -6,6 +6,12 @@ import api from '../api/axios'
 import { formatMoney } from '../utils/currency'
 import DateRangeCalendar from '../components/DateRangeCalendar'
 import PlaceholderImage from '../components/landing/PlaceholderImage'
+import {
+  getLatestValidCheckout,
+  isRangeAvailable,
+  parseUnavailableRanges,
+  type UnavailableRange,
+} from '../utils/availability'
 import type { CreateBookingResult, Property, PropertyAvailability } from '../types'
 
 const SERVICE_CHARGE_RATE = 0.10
@@ -24,9 +30,10 @@ export default function BookingPage() {
   const [property, setProperty] = useState<Property | null>(null)
   const [loadingProperty, setLoadingProperty] = useState(true)
   const [loadError, setLoadError] = useState('')
-  const [unavailableRanges, setUnavailableRanges] = useState<{ from: Date; to: Date }[]>([])
+  const [unavailableRanges, setUnavailableRanges] = useState<UnavailableRange[]>([])
 
   const [range, setRange] = useState<DateRange | undefined>(undefined)
+  const [calendarMessage, setCalendarMessage] = useState('')
   const [guestCount, setGuestCount] = useState(1)
   const [guestName, setGuestName] = useState('')
   const [guestPhone, setGuestPhone] = useState('')
@@ -34,27 +41,35 @@ export default function BookingPage() {
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
 
+  const fetchAvailability = useCallback(() => {
+    if (!slug) return Promise.resolve()
+    return api.get<PropertyAvailability>(`/api/public/properties/${slug}/availability`)
+      .then(res => setUnavailableRanges(parseUnavailableRanges(res.data.unavailableDates)))
+  }, [slug])
+
   useEffect(() => {
     if (!slug) return
     setLoadingProperty(true)
     Promise.all([
       api.get<Property>(`/api/public/properties/${slug}`),
-      api.get<PropertyAvailability>(`/api/public/properties/${slug}/availability`),
+      fetchAvailability(),
     ])
-      .then(([propRes, availRes]) => {
-        setProperty(propRes.data)
-        setUnavailableRanges(availRes.data.unavailableDates.map(r => {
-          // endDate is the checkout day, which is free for a new guest to check into (the
-          // backend's back-to-back booking rule) — react-day-picker's range matcher treats `to`
-          // as inclusive, so back it off by a day to avoid over-blocking that turnover day.
-          const to = new Date(r.endDate + 'T00:00:00')
-          to.setDate(to.getDate() - 1)
-          return { from: new Date(r.startDate + 'T00:00:00'), to }
-        }))
-      })
+      .then(([propRes]) => setProperty(propRes.data))
       .catch(() => setLoadError('This property could not be found.'))
       .finally(() => setLoadingProperty(false))
-  }, [slug])
+  }, [slug, fetchAvailability])
+
+  // Guards every selection against the same overlap rule the backend enforces, in case a stale
+  // `disabled` matcher (e.g. another guest just grabbed the dates) ever lets an invalid click
+  // through — the calendar's `disabled` prop is the primary defense, this is the fallback.
+  const handleRangeSelect = (next: DateRange | undefined) => {
+    setCalendarMessage('')
+    if (next?.from && next?.to && !isRangeAvailable(next.from, next.to, unavailableRanges)) {
+      setCalendarMessage("This date isn't available for this stay.")
+      return
+    }
+    setRange(next)
+  }
 
   const checkInDate = range?.from ? toISODate(range.from) : ''
   const checkOutDate = range?.to ? toISODate(range.to) : ''
@@ -76,6 +91,13 @@ export default function BookingPage() {
   }, [property, nights])
 
   const guestsOverCapacity = !!property && guestCount > property.maxGuests
+
+  // Once check-in is picked but not checkout yet, tell the guest how far this stay can run —
+  // the calendar's `disabled` prop already enforces this, this is just the friendly explanation.
+  const checkoutBoundary = useMemo(() => {
+    if (!range?.from || range?.to) return null
+    return getLatestValidCheckout(range.from, unavailableRanges)
+  }, [range, unavailableRanges])
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -99,7 +121,16 @@ export default function BookingPage() {
 
       window.location.href = payment.paymentLink
     } catch (err: any) {
-      setSubmitError(err.response?.data?.error ?? 'Something went wrong — please try again.')
+      if (err.response?.status === 409) {
+        // Someone else grabbed (part of) this range between when we loaded availability and now
+        // — refresh the real availability and send the guest back to picking dates instead of
+        // just surfacing a raw "already booked" error.
+        setRange(undefined)
+        setSubmitError('Those dates were just taken by another guest. Availability has been refreshed — please pick new dates.')
+        await fetchAvailability()
+      } else {
+        setSubmitError(err.response?.data?.error ?? 'Something went wrong — please try again.')
+      }
       setSubmitting(false)
     }
   }
@@ -154,8 +185,17 @@ export default function BookingPage() {
           {/* Calendar */}
           <div className="surface-card" style={{ padding: '28px 24px' }}>
             <h2 style={{ fontSize: 17, fontWeight: 700, color: '#111827', margin: '0 0 4px' }}>When are you staying?</h2>
-            <p style={{ fontSize: 13.5, color: '#6B7280', margin: '0 0 20px' }}>Choose your check-in and checkout dates.</p>
-            <DateRangeCalendar selected={range} onSelect={setRange} unavailableRanges={unavailableRanges} />
+            <p style={{ fontSize: 13.5, color: '#6B7280', margin: '0 0 20px' }}>
+              {range?.from && !range?.to
+                ? checkoutBoundary
+                  ? `Choose your checkout date — this stay is available through ${formatNice(checkoutBoundary)}.`
+                  : 'Choose your checkout date.'
+                : 'Choose your check-in and checkout dates.'}
+            </p>
+            <DateRangeCalendar selected={range} onSelect={handleRangeSelect} unavailableRanges={unavailableRanges} />
+            {calendarMessage && (
+              <p style={{ fontSize: 12.5, color: '#9A6B00', marginTop: 12 }}>{calendarMessage}</p>
+            )}
           </div>
 
           {/* Sticky summary */}
