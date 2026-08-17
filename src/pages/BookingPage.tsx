@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import type { DateRange } from 'react-day-picker'
-import { ArrowLeft, Users, User, Phone, Star, MapPin } from 'lucide-react'
+import { ArrowLeft, Users, User, Phone, Star, MapPin, Check, Clock } from 'lucide-react'
 import api from '../api/axios'
 import { formatMoney } from '../utils/currency'
+import { formatCountdown, useCountdown } from '../hooks/useCountdown'
 import DateRangeCalendar from '../components/DateRangeCalendar'
 import PlaceholderImage from '../components/landing/PlaceholderImage'
 import {
@@ -15,6 +16,14 @@ import {
 import type { CreateBookingResult, Property, PropertyAvailability } from '../types'
 
 const SERVICE_CHARGE_RATE = 0.10
+
+type Step = 'dates' | 'guests' | 'review' | 'payment'
+const STEPS: { key: Step; label: string }[] = [
+  { key: 'dates', label: 'Dates' },
+  { key: 'guests', label: 'Guests' },
+  { key: 'review', label: 'Review' },
+  { key: 'payment', label: 'Payment' },
+]
 
 function toISODate(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -32,14 +41,22 @@ export default function BookingPage() {
   const [loadError, setLoadError] = useState('')
   const [unavailableRanges, setUnavailableRanges] = useState<UnavailableRange[]>([])
 
+  const [step, setStep] = useState<Step>('dates')
+
   const [range, setRange] = useState<DateRange | undefined>(undefined)
   const [calendarMessage, setCalendarMessage] = useState('')
   const [guestCount, setGuestCount] = useState(1)
   const [guestName, setGuestName] = useState('')
   const [guestPhone, setGuestPhone] = useState('')
 
-  const [submitting, setSubmitting] = useState(false)
-  const [submitError, setSubmitError] = useState('')
+  // Set once the booking (and its 2-hour hold) actually exists on the backend — from that point
+  // dates/guests are locked in and the countdown below is authoritative, not a locally-made-up one.
+  const [createdBooking, setCreatedBooking] = useState<{ bookingId: string; expiresAt: string } | null>(null)
+
+  const [reserving, setReserving] = useState(false)
+  const [reserveError, setReserveError] = useState('')
+  const [payingAgain, setPayingAgain] = useState(false)
+  const [payError, setPayError] = useState('')
 
   const fetchAvailability = useCallback(() => {
     if (!slug) return Promise.resolve()
@@ -99,11 +116,26 @@ export default function BookingPage() {
     return getLatestValidCheckout(range.from, unavailableRanges)
   }, [range, unavailableRanges])
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault()
+  const remainingMs = useCountdown(createdBooking?.expiresAt ?? null, () => {})
+
+  const goToDates = () => {
+    if (nights === 0) return
+    setStep('guests')
+  }
+
+  const goToReview = (e?: FormEvent) => {
+    e?.preventDefault()
+    if (guestsOverCapacity || !guestName.trim() || !guestPhone.trim()) return
+    setStep('review')
+  }
+
+  // Creates the booking (starting its 2-hour hold) and immediately tries to hand off to payment.
+  // Split from the payment-link step so a Flutterwave hiccup after the hold exists can retry
+  // without ever creating a second booking for the same dates.
+  const handleReserve = async () => {
     if (!slug || !checkInDate || !checkOutDate) return
-    setSubmitError('')
-    setSubmitting(true)
+    setReserveError('')
+    setReserving(true)
     try {
       const { data: booking } = await api.post<CreateBookingResult>('/api/public/bookings', {
         propertySlug: slug,
@@ -113,25 +145,45 @@ export default function BookingPage() {
         checkOutDate,
         guestCount,
       })
-
-      const { data: payment } = await api.post<{ paymentLink: string; reference: string }>(
-        '/api/payments/initiate',
-        { bookingId: booking.bookingId }
-      )
-
-      window.location.href = payment.paymentLink
+      setCreatedBooking({ bookingId: booking.bookingId, expiresAt: '' })
+      setStep('payment')
+      await initiatePayment(booking.bookingId)
     } catch (err: any) {
       if (err.response?.status === 409) {
         // Someone else grabbed (part of) this range between when we loaded availability and now
         // — refresh the real availability and send the guest back to picking dates instead of
         // just surfacing a raw "already booked" error.
         setRange(undefined)
-        setSubmitError('Those dates were just taken by another guest. Availability has been refreshed — please pick new dates.')
+        setStep('dates')
+        setReserveError('Those dates were just taken by another guest. Availability has been refreshed — please pick new dates.')
         await fetchAvailability()
       } else {
-        setSubmitError(err.response?.data?.error ?? 'Something went wrong — please try again.')
+        setReserveError(err.response?.data?.error ?? 'Something went wrong — please try again.')
       }
-      setSubmitting(false)
+    } finally {
+      setReserving(false)
+    }
+  }
+
+  const initiatePayment = async (bookingId: string) => {
+    setPayingAgain(true)
+    setPayError('')
+    try {
+      const { data: payment } = await api.post<{ paymentLink: string; reference: string }>(
+        '/api/payments/initiate',
+        { bookingId }
+      )
+      window.location.href = payment.paymentLink
+    } catch (err: any) {
+      setPayError(err.response?.data?.error ?? 'Could not start payment — please try again.')
+      setPayingAgain(false)
+      // Fetch the real expiry now that we know the hold exists but the redirect failed, so the
+      // countdown shown while the guest retries is accurate rather than blank.
+      if (bookingId) {
+        api.get(`/api/public/bookings/${bookingId}`)
+          .then(({ data }) => setCreatedBooking({ bookingId, expiresAt: data.expiresAt }))
+          .catch(() => {})
+      }
     }
   }
 
@@ -152,6 +204,9 @@ export default function BookingPage() {
     )
   }
 
+  const stepIndex = STEPS.findIndex(s => s.key === step)
+  const datesLocked = step === 'payment'
+
   return (
     <div style={{ minHeight: '100vh', background: '#F5F3EE' }}>
       <header style={{ borderBottom: '1px solid #E5E7EB', background: '#fff' }}>
@@ -164,7 +219,7 @@ export default function BookingPage() {
 
       <main style={{ maxWidth: 1080, margin: '0 auto', padding: '28px 20px 60px' }}>
         {/* Property context strip — subtle, keeps focus on the calendar */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 28 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20 }}>
           <div style={{ width: 56, height: 56, borderRadius: 12, overflow: 'hidden', flexShrink: 0 }}>
             <PlaceholderImage variant="apartment-living" src={property.coverImageUrl ?? undefined} alt={property.title} style={{ height: '100%' }} />
           </div>
@@ -181,20 +236,176 @@ export default function BookingPage() {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="booking-layout" style={{ display: 'grid', gap: 24, alignItems: 'start' }}>
-          {/* Calendar */}
+        {/* Step indicator */}
+        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 24 }}>
+          {STEPS.map((s, i) => (
+            <div key={s.key} style={{ display: 'flex', alignItems: 'center', flex: i < STEPS.length - 1 ? 1 : undefined }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{
+                  width: 26, height: 26, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 12, fontWeight: 700,
+                  background: i <= stepIndex ? '#095C46' : '#E5E7EB',
+                  color: i <= stepIndex ? '#fff' : '#9CA3AF',
+                  flexShrink: 0,
+                }}>
+                  {i < stepIndex ? <Check size={13} /> : i + 1}
+                </div>
+                <span style={{ fontSize: 13, fontWeight: 600, color: i <= stepIndex ? '#111827' : '#9CA3AF', whiteSpace: 'nowrap' }}>
+                  {s.label}
+                </span>
+              </div>
+              {i < STEPS.length - 1 && (
+                <div style={{ flex: 1, height: 2, background: i < stepIndex ? '#095C46' : '#E5E7EB', margin: '0 12px' }} />
+              )}
+            </div>
+          ))}
+        </div>
+
+        <div className="booking-layout" style={{ display: 'grid', gap: 24, alignItems: 'start' }}>
+          {/* Left: step content */}
           <div className="surface-card" style={{ padding: '28px 24px' }}>
-            <h2 style={{ fontSize: 17, fontWeight: 700, color: '#111827', margin: '0 0 4px' }}>When are you staying?</h2>
-            <p style={{ fontSize: 13.5, color: '#6B7280', margin: '0 0 20px' }}>
-              {range?.from && !range?.to
-                ? checkoutBoundary
-                  ? `Choose your checkout date — this stay is available through ${formatNice(checkoutBoundary)}.`
-                  : 'Choose your checkout date.'
-                : 'Choose your check-in and checkout dates.'}
-            </p>
-            <DateRangeCalendar selected={range} onSelect={handleRangeSelect} unavailableRanges={unavailableRanges} />
-            {calendarMessage && (
-              <p style={{ fontSize: 12.5, color: '#9A6B00', marginTop: 12 }}>{calendarMessage}</p>
+            {step === 'dates' && (
+              <>
+                <h2 style={{ fontSize: 17, fontWeight: 700, color: '#111827', margin: '0 0 4px' }}>When are you staying?</h2>
+                <p style={{ fontSize: 13.5, color: '#6B7280', margin: '0 0 20px' }}>
+                  {range?.from && !range?.to
+                    ? checkoutBoundary
+                      ? `Choose your checkout date — this stay is available through ${formatNice(checkoutBoundary)}.`
+                      : 'Choose your checkout date.'
+                    : 'Choose your check-in and checkout dates.'}
+                </p>
+                <DateRangeCalendar selected={range} onSelect={handleRangeSelect} unavailableRanges={unavailableRanges} />
+                {calendarMessage && (
+                  <p style={{ fontSize: 12.5, color: '#9A6B00', marginTop: 12 }}>{calendarMessage}</p>
+                )}
+                <button type="button" className="btn btn-primary btn-lg" style={{ width: '100%', marginTop: 20 }} disabled={nights === 0} onClick={goToDates}>
+                  Continue →
+                </button>
+              </>
+            )}
+
+            {step === 'guests' && (
+              <form onSubmit={goToReview}>
+                <h2 style={{ fontSize: 17, fontWeight: 700, color: '#111827', margin: '0 0 4px' }}>Who's coming?</h2>
+                <p style={{ fontSize: 13.5, color: '#6B7280', margin: '0 0 20px' }}>Tell us a bit about your group and how to reach you.</p>
+
+                <div className="form-group">
+                  <label><Users size={13} style={{ marginRight: 4, verticalAlign: -2 }} />Guests</label>
+                  <input
+                    type="number" className="input" required min={1} max={property.maxGuests}
+                    value={guestCount} onChange={e => setGuestCount(Number(e.target.value))}
+                  />
+                  {guestsOverCapacity ? (
+                    <p style={{ fontSize: 12, color: '#DC2626', marginTop: 4 }}>This property sleeps a maximum of {property.maxGuests} guests.</p>
+                  ) : (
+                    <p style={{ fontSize: 12, color: '#9CA3AF', marginTop: 4 }}>Up to {property.maxGuests} guests.</p>
+                  )}
+                </div>
+
+                <div className="form-group">
+                  <label><User size={13} style={{ marginRight: 4, verticalAlign: -2 }} />Full name</label>
+                  <input
+                    type="text" className="input" required placeholder="Your full name"
+                    value={guestName} onChange={e => setGuestName(e.target.value)}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label><Phone size={13} style={{ marginRight: 4, verticalAlign: -2 }} />Phone number</label>
+                  <input
+                    type="tel" className="input" required placeholder="e.g. +234 801 234 5678"
+                    value={guestPhone} onChange={e => setGuestPhone(e.target.value)}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
+                  <button type="button" className="btn btn-secondary btn-lg" onClick={() => setStep('dates')}>← Back</button>
+                  <button type="submit" className="btn btn-primary btn-lg" style={{ flex: 1 }} disabled={guestsOverCapacity || !guestName.trim() || !guestPhone.trim()}>
+                    Continue to review →
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {step === 'review' && pricing && (
+              <>
+                <h2 style={{ fontSize: 17, fontWeight: 700, color: '#111827', margin: '0 0 4px' }}>Review your stay</h2>
+                <p style={{ fontSize: 13.5, color: '#6B7280', margin: '0 0 20px' }}>
+                  We'll verify these dates are still available and hold them for 2 hours while you pay.
+                </p>
+
+                <div className="surface-muted" style={{ padding: 16, marginBottom: 16 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
+                    <div>
+                      <p style={{ fontSize: 11, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 700, margin: '0 0 3px' }}>Check-in</p>
+                      <p style={{ fontSize: 14.5, fontWeight: 700, color: '#111827', margin: 0 }}>{range?.from && formatNice(range.from)}</p>
+                    </div>
+                    <div>
+                      <p style={{ fontSize: 11, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 700, margin: '0 0 3px' }}>Check-out</p>
+                      <p style={{ fontSize: 14.5, fontWeight: 700, color: '#111827', margin: 0 }}>{range?.to && formatNice(range.to)}</p>
+                    </div>
+                  </div>
+                  <p style={{ fontSize: 12.5, color: '#095C46', fontWeight: 600, margin: 0 }}>{nights} night{nights === 1 ? '' : 's'} · {guestCount} guest{guestCount === 1 ? '' : 's'}</p>
+                </div>
+
+                <div style={{ fontSize: 13.5, color: '#374151', marginBottom: 16 }}>
+                  <p style={{ margin: '0 0 2px', fontWeight: 600, color: '#111827' }}>{guestName}</p>
+                  <p style={{ margin: 0, color: '#6B7280' }}>{guestPhone}</p>
+                </div>
+
+                <div className="surface-muted" style={{ padding: 16, marginBottom: 8 }}>
+                  <Row label={`${formatMoney(property.pricePerNight, property.currency)} × ${nights} night${nights === 1 ? '' : 's'}`} value={pricing.nightlySubtotal} currency={property.currency} />
+                  {pricing.cleaningFee > 0 && <Row label="Cleaning fee" value={pricing.cleaningFee} currency={property.currency} />}
+                  <Row label="Service fee" value={pricing.serviceCharge} currency={property.currency} />
+                  <div style={{ borderTop: '1px solid #E5E7EB', marginTop: 8, paddingTop: 8 }}>
+                    <Row label="Total" value={pricing.total} currency={property.currency} bold />
+                  </div>
+                </div>
+
+                {reserveError && (
+                  <div style={{ background: '#FEF2F2', border: '1px solid #FCA5A5', borderRadius: 10, padding: '10px 14px', color: '#991B1B', fontSize: 13, marginTop: 12 }}>
+                    {reserveError}
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
+                  <button type="button" className="btn btn-secondary btn-lg" onClick={() => setStep('guests')} disabled={reserving}>← Back</button>
+                  <button type="button" className="btn btn-primary btn-lg" style={{ flex: 1 }} onClick={handleReserve} disabled={reserving}>
+                    {reserving ? <><span className="spinner" /> Reserving…</> : 'Reserve & continue to payment →'}
+                  </button>
+                </div>
+              </>
+            )}
+
+            {step === 'payment' && (
+              <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                {!payError ? (
+                  <>
+                    <span className="spinner spinner-dark" style={{ marginBottom: 16 }} />
+                    <h2 style={{ fontSize: 17, fontWeight: 700, color: '#111827', margin: '0 0 6px' }}>Taking you to secure payment…</h2>
+                    <p style={{ fontSize: 13.5, color: '#6B7280', margin: 0 }}>Your dates are held — don't close this tab.</p>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: 10, padding: 16, textAlign: 'left' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                        <Clock size={16} color="#92400E" />
+                        <span style={{ fontSize: 13.5, fontWeight: 700, color: '#92400E' }}>
+                          {createdBooking?.expiresAt ? `Your reservation is held for ${formatCountdown(remainingMs)}` : 'Your reservation is held'}
+                        </span>
+                      </div>
+                      <p style={{ fontSize: 12.5, color: '#92400E', margin: '0 0 12px' }}>{payError}</p>
+                      <button
+                        className="btn btn-primary btn-md"
+                        onClick={() => createdBooking && initiatePayment(createdBooking.bookingId)}
+                        disabled={payingAgain}
+                      >
+                        {payingAgain ? <span className="spinner" /> : 'Try payment again'}
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
             )}
           </div>
 
@@ -217,37 +428,17 @@ export default function BookingPage() {
               </div>
             </div>
             {nights > 0 && (
-              <p style={{ fontSize: 12.5, color: '#095C46', fontWeight: 600, margin: '0 0 16px' }}>{nights} night{nights === 1 ? '' : 's'}</p>
+              <p style={{ fontSize: 12.5, color: '#095C46', fontWeight: 600, margin: '0 0 4px' }}>{nights} night{nights === 1 ? '' : 's'}</p>
+            )}
+            {!datesLocked && range?.from && step !== 'dates' && (
+              <button type="button" onClick={() => setStep('dates')} style={{ background: 'none', border: 'none', padding: 0, color: '#095C46', fontSize: 12, fontWeight: 600, cursor: 'pointer', marginBottom: 12 }}>
+                Change dates
+              </button>
             )}
 
-            <div className="form-group">
-              <label><Users size={13} style={{ marginRight: 4, verticalAlign: -2 }} />Guests</label>
-              <input
-                type="number" className="input" required min={1} max={property.maxGuests}
-                value={guestCount} onChange={e => setGuestCount(Number(e.target.value))}
-              />
-              {guestsOverCapacity ? (
-                <p style={{ fontSize: 12, color: '#DC2626', marginTop: 4 }}>This property sleeps a maximum of {property.maxGuests} guests.</p>
-              ) : (
-                <p style={{ fontSize: 12, color: '#9CA3AF', marginTop: 4 }}>Up to {property.maxGuests} guests.</p>
-              )}
-            </div>
-
-            <div className="form-group">
-              <label><User size={13} style={{ marginRight: 4, verticalAlign: -2 }} />Full name</label>
-              <input
-                type="text" className="input" required placeholder="Your full name"
-                value={guestName} onChange={e => setGuestName(e.target.value)}
-              />
-            </div>
-
-            <div className="form-group">
-              <label><Phone size={13} style={{ marginRight: 4, verticalAlign: -2 }} />Phone number</label>
-              <input
-                type="tel" className="input" required placeholder="e.g. +234 801 234 5678"
-                value={guestPhone} onChange={e => setGuestPhone(e.target.value)}
-              />
-            </div>
+            {step !== 'dates' && step !== 'guests' && (
+              <p style={{ fontSize: 13, color: '#374151', margin: '0 0 16px' }}>{guestCount} guest{guestCount === 1 ? '' : 's'}</p>
+            )}
 
             {pricing && (
               <div className="surface-muted" style={{ padding: 16, marginTop: 8, marginBottom: 16 }}>
@@ -259,18 +450,8 @@ export default function BookingPage() {
                 </div>
               </div>
             )}
-
-            {submitError && (
-              <div style={{ background: '#FEF2F2', border: '1px solid #FCA5A5', borderRadius: 10, padding: '10px 14px', color: '#991B1B', fontSize: 13, marginBottom: 16 }}>
-                {submitError}
-              </div>
-            )}
-
-            <button type="submit" className="btn btn-primary btn-lg" style={{ width: '100%' }} disabled={submitting || nights === 0 || guestsOverCapacity}>
-              {submitting ? <><span className="spinner" /> Redirecting to payment…</> : 'Continue to payment →'}
-            </button>
           </div>
-        </form>
+        </div>
       </main>
     </div>
   )
