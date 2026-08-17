@@ -450,11 +450,90 @@ label {
   .detail-layout { grid-template-columns: 1.6fr 1fr; }
 }
 
+/* ── Booking page: calendar + sticky summary ─────────────── */
+.booking-layout { grid-template-columns: 1fr; }
+@media (min-width: 900px) {
+  .booking-layout { grid-template-columns: 1.5fr 1fr; }
+  .booking-summary { position: sticky; top: 20px; }
+}
+
 /* ── Form rows: stack on narrow viewports ────────────────── */
 .form-row-2, .form-row-3 { grid-template-columns: 1fr !important; }
 @media (min-width: 560px) {
   .form-row-2 { grid-template-columns: 1fr 1fr !important; }
   .form-row-3 { grid-template-columns: 1fr 1fr 1fr !important; }
+}
+
+/* ── Date range calendar (booking) ───────────────────────────
+   No react-day-picker CSS is imported anywhere — every visual state below
+   is Unyimi's own, driven entirely through the classNames map passed to
+   DayPicker in DateRangeCalendar.tsx. */
+.uy-cal { font-family: inherit; }
+
+.uy-cal-months { display: flex; gap: 36px; flex-wrap: wrap; }
+.uy-cal-month { flex: 1 1 260px; min-width: 260px; }
+
+.uy-cal-caption {
+  display: flex; align-items: center; justify-content: center;
+  padding: 4px 0 18px; position: relative;
+}
+.uy-cal-caption-label { font-size: 16px; font-weight: 700; color: #111827; letter-spacing: -0.2px; }
+
+.uy-cal-nav { display: flex; gap: 6px; position: absolute; top: 0; right: 0; }
+.uy-cal-nav-btn {
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1.5px solid var(--color-border); background: var(--color-surface);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: #374151;
+  transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s;
+}
+.uy-cal-nav-btn:hover:not(:disabled) { background: var(--color-primary-tint); border-color: var(--color-primary); color: var(--color-primary); }
+.uy-cal-nav-btn:active:not(:disabled) { transform: scale(0.94); }
+.uy-cal-nav-btn:disabled { opacity: 0.3; cursor: default; }
+
+.uy-cal-grid { border-collapse: separate; border-spacing: 0; width: 100%; }
+.uy-cal-weekday {
+  font-size: 11.5px; font-weight: 700; color: var(--color-text-disabled);
+  text-transform: uppercase; letter-spacing: 0.05em; padding-bottom: 10px; text-align: center;
+}
+.uy-cal-day { text-align: center; padding: 2px 0; position: relative; }
+.uy-cal-day-btn {
+  width: 40px; height: 40px; border-radius: 50%; border: none; background: none;
+  font-size: 14px; font-weight: 500; color: #111827; cursor: pointer;
+  position: relative; z-index: 2;
+  transition: background 0.15s, color 0.15s, transform 0.1s;
+}
+.uy-cal-day-btn:hover { background: var(--color-primary-tint); }
+.uy-cal-day-btn:active { transform: scale(0.92); }
+
+.uy-cal-today .uy-cal-day-btn { font-weight: 800; box-shadow: inset 0 0 0 1.5px var(--color-primary); }
+.uy-cal-outside .uy-cal-day-btn { color: var(--color-border); }
+.uy-cal-hidden { visibility: hidden; }
+
+.uy-cal-disabled .uy-cal-day-btn { color: var(--color-border); text-decoration: line-through; cursor: not-allowed; }
+.uy-cal-disabled .uy-cal-day-btn:hover { background: none; }
+
+/* Middle-of-range days connect into one continuous band instead of separate circles. */
+.uy-cal-range-middle { background: var(--color-primary-tint); }
+.uy-cal-range-middle .uy-cal-day-btn { background: none; border-radius: 0; color: var(--color-primary); font-weight: 600; }
+.uy-cal-range-middle .uy-cal-day-btn:hover { background: rgba(9,92,70,0.1); }
+
+.uy-cal-range-start, .uy-cal-range-end { background: var(--color-primary-tint); }
+.uy-cal-range-start { border-radius: 9999px 0 0 9999px; }
+.uy-cal-range-end { border-radius: 0 9999px 9999px 0; }
+.uy-cal-range-start.uy-cal-range-end { border-radius: 9999px; }
+
+.uy-cal-selected .uy-cal-day-btn,
+.uy-cal-range-start .uy-cal-day-btn,
+.uy-cal-range-end .uy-cal-day-btn {
+  background: var(--color-primary); color: #fff; font-weight: 700;
+}
+.uy-cal-selected .uy-cal-day-btn:hover,
+.uy-cal-range-start .uy-cal-day-btn:hover,
+.uy-cal-range-end .uy-cal-day-btn:hover { background: var(--color-primary-dark); }
+
+@media (max-width: 640px) {
+  .uy-cal-day-btn { width: 36px; height: 36px; font-size: 13.5px; }
 }
 
 /* ── Dashboard layout: mobile slide-in sidebar ───────────────── */

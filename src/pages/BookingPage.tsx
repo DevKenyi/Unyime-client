@@ -1,14 +1,21 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { ArrowLeft, Calendar, Users, User, Phone } from 'lucide-react'
+import type { DateRange } from 'react-day-picker'
+import { ArrowLeft, Users, User, Phone, Star, MapPin } from 'lucide-react'
 import api from '../api/axios'
 import { formatMoney } from '../utils/currency'
-import type { CreateBookingResult, Property } from '../types'
+import DateRangeCalendar from '../components/DateRangeCalendar'
+import PlaceholderImage from '../components/landing/PlaceholderImage'
+import type { CreateBookingResult, Property, PropertyAvailability } from '../types'
 
 const SERVICE_CHARGE_RATE = 0.10
 
-function todayISO() {
-  return new Date().toISOString().split('T')[0]
+function toISODate(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+function formatNice(d: Date): string {
+  return d.toLocaleDateString('en-NG', { month: 'short', day: 'numeric' })
 }
 
 export default function BookingPage() {
@@ -17,9 +24,9 @@ export default function BookingPage() {
   const [property, setProperty] = useState<Property | null>(null)
   const [loadingProperty, setLoadingProperty] = useState(true)
   const [loadError, setLoadError] = useState('')
+  const [unavailableRanges, setUnavailableRanges] = useState<{ from: Date; to: Date }[]>([])
 
-  const [checkInDate, setCheckInDate] = useState('')
-  const [checkOutDate, setCheckOutDate] = useState('')
+  const [range, setRange] = useState<DateRange | undefined>(undefined)
   const [guestCount, setGuestCount] = useState(1)
   const [guestName, setGuestName] = useState('')
   const [guestPhone, setGuestPhone] = useState('')
@@ -30,17 +37,33 @@ export default function BookingPage() {
   useEffect(() => {
     if (!slug) return
     setLoadingProperty(true)
-    api.get<Property>(`/api/public/properties/${slug}`)
-      .then(({ data }) => setProperty(data))
+    Promise.all([
+      api.get<Property>(`/api/public/properties/${slug}`),
+      api.get<PropertyAvailability>(`/api/public/properties/${slug}/availability`),
+    ])
+      .then(([propRes, availRes]) => {
+        setProperty(propRes.data)
+        setUnavailableRanges(availRes.data.unavailableDates.map(r => {
+          // endDate is the checkout day, which is free for a new guest to check into (the
+          // backend's back-to-back booking rule) — react-day-picker's range matcher treats `to`
+          // as inclusive, so back it off by a day to avoid over-blocking that turnover day.
+          const to = new Date(r.endDate + 'T00:00:00')
+          to.setDate(to.getDate() - 1)
+          return { from: new Date(r.startDate + 'T00:00:00'), to }
+        }))
+      })
       .catch(() => setLoadError('This property could not be found.'))
       .finally(() => setLoadingProperty(false))
   }, [slug])
 
+  const checkInDate = range?.from ? toISODate(range.from) : ''
+  const checkOutDate = range?.to ? toISODate(range.to) : ''
+
   const nights = useMemo(() => {
-    if (!checkInDate || !checkOutDate) return 0
-    const diff = (new Date(checkOutDate).getTime() - new Date(checkInDate).getTime()) / 86_400_000
+    if (!range?.from || !range?.to) return 0
+    const diff = (range.to.getTime() - range.from.getTime()) / 86_400_000
     return diff > 0 ? Math.round(diff) : 0
-  }, [checkInDate, checkOutDate])
+  }, [range])
 
   const pricing = useMemo(() => {
     if (!property || nights === 0) return null
@@ -52,9 +75,11 @@ export default function BookingPage() {
     return { nightlySubtotal, cleaningFee, subtotal, serviceCharge, total }
   }, [property, nights])
 
+  const guestsOverCapacity = !!property && guestCount > property.maxGuests
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
-    if (!slug) return
+    if (!slug || !checkInDate || !checkOutDate) return
     setSubmitError('')
     setSubmitting(true)
     try {
@@ -99,84 +124,112 @@ export default function BookingPage() {
   return (
     <div style={{ minHeight: '100vh', background: '#F5F3EE' }}>
       <header style={{ borderBottom: '1px solid #E5E7EB', background: '#fff' }}>
-        <div style={{ maxWidth: 720, margin: '0 auto', padding: '14px 20px' }}>
+        <div style={{ maxWidth: 1080, margin: '0 auto', padding: '14px 20px' }}>
           <Link to={`/properties/${slug}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#374151', textDecoration: 'none', fontSize: 14, fontWeight: 600 }}>
-            <ArrowLeft size={16} /> Back to {property.title}
+            <ArrowLeft size={16} /> Back to property
           </Link>
         </div>
       </header>
 
-      <main style={{ maxWidth: 720, margin: '0 auto', padding: '28px 20px 60px' }}>
-        <h1 style={{ fontSize: 22, fontWeight: 800, color: '#111827', margin: '0 0 20px' }}>
-          Book your stay
-        </h1>
-
-        <form onSubmit={handleSubmit} className="surface-card" style={{ padding: 24, marginBottom: 20 }}>
-          <div className="form-row-2" style={{ display: 'grid', gap: 16, marginBottom: 4 }}>
-            <div className="form-group">
-              <label><Calendar size={13} style={{ marginRight: 4, verticalAlign: -2 }} />Check-in</label>
-              <input
-                type="date" className="input" required min={todayISO()}
-                value={checkInDate} onChange={e => setCheckInDate(e.target.value)}
-              />
-            </div>
-            <div className="form-group">
-              <label><Calendar size={13} style={{ marginRight: 4, verticalAlign: -2 }} />Check-out</label>
-              <input
-                type="date" className="input" required min={checkInDate || todayISO()}
-                value={checkOutDate} onChange={e => setCheckOutDate(e.target.value)}
-              />
+      <main style={{ maxWidth: 1080, margin: '0 auto', padding: '28px 20px 60px' }}>
+        {/* Property context strip — subtle, keeps focus on the calendar */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 28 }}>
+          <div style={{ width: 56, height: 56, borderRadius: 12, overflow: 'hidden', flexShrink: 0 }}>
+            <PlaceholderImage variant="apartment-living" src={property.coverImageUrl ?? undefined} alt={property.title} style={{ height: '100%' }} />
+          </div>
+          <div>
+            <h1 style={{ fontSize: 18, fontWeight: 800, color: '#111827', margin: '0 0 3px' }}>{property.title}</h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 13, color: '#6B7280' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={12} /> {property.city}</span>
+              {property.averageRating != null && (
+                <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                  <Star size={12} color="#F59E0B" fill="#F59E0B" /> {property.averageRating.toFixed(1)}
+                </span>
+              )}
             </div>
           </div>
+        </div>
 
-          <div className="form-group">
-            <label><Users size={13} style={{ marginRight: 4, verticalAlign: -2 }} />Guests</label>
-            <input
-              type="number" className="input" required min={1} max={property.maxGuests}
-              value={guestCount} onChange={e => setGuestCount(Number(e.target.value))}
-            />
-            <p style={{ fontSize: 12, color: '#9CA3AF', marginTop: 4 }}>This property sleeps up to {property.maxGuests} guests.</p>
+        <form onSubmit={handleSubmit} className="booking-layout" style={{ display: 'grid', gap: 24, alignItems: 'start' }}>
+          {/* Calendar */}
+          <div className="surface-card" style={{ padding: '28px 24px' }}>
+            <h2 style={{ fontSize: 17, fontWeight: 700, color: '#111827', margin: '0 0 4px' }}>When are you staying?</h2>
+            <p style={{ fontSize: 13.5, color: '#6B7280', margin: '0 0 20px' }}>Choose your check-in and checkout dates.</p>
+            <DateRangeCalendar selected={range} onSelect={setRange} unavailableRanges={unavailableRanges} />
           </div>
 
-          <div className="form-group">
-            <label><User size={13} style={{ marginRight: 4, verticalAlign: -2 }} />Full name</label>
-            <input
-              type="text" className="input" required placeholder="Your full name"
-              value={guestName} onChange={e => setGuestName(e.target.value)}
-            />
-          </div>
+          {/* Sticky summary */}
+          <div className="surface-card booking-summary" style={{ padding: 24 }}>
+            <h2 style={{ fontSize: 15, fontWeight: 700, color: '#111827', margin: '0 0 16px' }}>Your stay</h2>
 
-          <div className="form-group">
-            <label><Phone size={13} style={{ marginRight: 4, verticalAlign: -2 }} />Phone number</label>
-            <input
-              type="tel" className="input" required placeholder="e.g. +234 801 234 5678"
-              value={guestPhone} onChange={e => setGuestPhone(e.target.value)}
-            />
-          </div>
-
-          {pricing && (
-            <div className="surface-muted" style={{ padding: 16, marginTop: 8, marginBottom: 16 }}>
-              <p style={{ fontSize: 13, color: '#6B7280', margin: '0 0 10px', fontWeight: 600 }}>
-                Price breakdown · {nights} night{nights === 1 ? '' : 's'}
-              </p>
-              <Row label={`${formatMoney(property.pricePerNight, property.currency)} × ${nights} night${nights === 1 ? '' : 's'}`} value={pricing.nightlySubtotal} currency={property.currency} />
-              {pricing.cleaningFee > 0 && <Row label="Cleaning fee" value={pricing.cleaningFee} currency={property.currency} />}
-              <Row label="Service charge" value={pricing.serviceCharge} currency={property.currency} />
-              <div style={{ borderTop: '1px solid #E5E7EB', marginTop: 8, paddingTop: 8 }}>
-                <Row label="Total" value={pricing.total} currency={property.currency} bold />
+            <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+              <div style={{ flex: 1 }}>
+                <p style={{ fontSize: 11, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 700, margin: '0 0 3px' }}>Check-in</p>
+                <p style={{ fontSize: 14.5, fontWeight: 700, color: range?.from ? '#111827' : '#D1D5DB', margin: 0 }}>
+                  {range?.from ? formatNice(range.from) : 'Select date'}
+                </p>
+              </div>
+              <div style={{ flex: 1 }}>
+                <p style={{ fontSize: 11, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 700, margin: '0 0 3px' }}>Check-out</p>
+                <p style={{ fontSize: 14.5, fontWeight: 700, color: range?.to ? '#111827' : '#D1D5DB', margin: 0 }}>
+                  {range?.to ? formatNice(range.to) : 'Select date'}
+                </p>
               </div>
             </div>
-          )}
+            {nights > 0 && (
+              <p style={{ fontSize: 12.5, color: '#095C46', fontWeight: 600, margin: '0 0 16px' }}>{nights} night{nights === 1 ? '' : 's'}</p>
+            )}
 
-          {submitError && (
-            <div style={{ background: '#FEF2F2', border: '1px solid #FCA5A5', borderRadius: 10, padding: '10px 14px', color: '#991B1B', fontSize: 13, marginBottom: 16 }}>
-              {submitError}
+            <div className="form-group">
+              <label><Users size={13} style={{ marginRight: 4, verticalAlign: -2 }} />Guests</label>
+              <input
+                type="number" className="input" required min={1} max={property.maxGuests}
+                value={guestCount} onChange={e => setGuestCount(Number(e.target.value))}
+              />
+              {guestsOverCapacity ? (
+                <p style={{ fontSize: 12, color: '#DC2626', marginTop: 4 }}>This property sleeps a maximum of {property.maxGuests} guests.</p>
+              ) : (
+                <p style={{ fontSize: 12, color: '#9CA3AF', marginTop: 4 }}>Up to {property.maxGuests} guests.</p>
+              )}
             </div>
-          )}
 
-          <button type="submit" className="btn btn-primary btn-lg" style={{ width: '100%' }} disabled={submitting || nights === 0}>
-            {submitting ? <><span className="spinner" /> Redirecting to payment…</> : 'Continue to payment'}
-          </button>
+            <div className="form-group">
+              <label><User size={13} style={{ marginRight: 4, verticalAlign: -2 }} />Full name</label>
+              <input
+                type="text" className="input" required placeholder="Your full name"
+                value={guestName} onChange={e => setGuestName(e.target.value)}
+              />
+            </div>
+
+            <div className="form-group">
+              <label><Phone size={13} style={{ marginRight: 4, verticalAlign: -2 }} />Phone number</label>
+              <input
+                type="tel" className="input" required placeholder="e.g. +234 801 234 5678"
+                value={guestPhone} onChange={e => setGuestPhone(e.target.value)}
+              />
+            </div>
+
+            {pricing && (
+              <div className="surface-muted" style={{ padding: 16, marginTop: 8, marginBottom: 16 }}>
+                <Row label={`${formatMoney(property.pricePerNight, property.currency)} × ${nights} night${nights === 1 ? '' : 's'}`} value={pricing.nightlySubtotal} currency={property.currency} />
+                {pricing.cleaningFee > 0 && <Row label="Cleaning fee" value={pricing.cleaningFee} currency={property.currency} />}
+                <Row label="Service fee" value={pricing.serviceCharge} currency={property.currency} />
+                <div style={{ borderTop: '1px solid #E5E7EB', marginTop: 8, paddingTop: 8 }}>
+                  <Row label="Total" value={pricing.total} currency={property.currency} bold />
+                </div>
+              </div>
+            )}
+
+            {submitError && (
+              <div style={{ background: '#FEF2F2', border: '1px solid #FCA5A5', borderRadius: 10, padding: '10px 14px', color: '#991B1B', fontSize: 13, marginBottom: 16 }}>
+                {submitError}
+              </div>
+            )}
+
+            <button type="submit" className="btn btn-primary btn-lg" style={{ width: '100%' }} disabled={submitting || nights === 0 || guestsOverCapacity}>
+              {submitting ? <><span className="spinner" /> Redirecting to payment…</> : 'Continue to payment →'}
+            </button>
+          </div>
         </form>
       </main>
     </div>
