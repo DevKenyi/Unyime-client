@@ -30,6 +30,16 @@ export default function AdminBookings() {
     }
   }
 
+  const markPaid = async (id: string) => {
+    setBusyId(id)
+    try {
+      const { data } = await api.patch<Booking>(`/api/admin/bookings/${id}/mark-paid`)
+      setBookings(prev => prev.map(b => b.id === id ? data : b))
+    } finally {
+      setBusyId(null)
+    }
+  }
+
   return (
     <DashboardLayout>
       <div className="page-shell">
@@ -60,6 +70,15 @@ export default function AdminBookings() {
                     <StatusPill status={b.status} />
                   </div>
                 </div>
+
+                {b.status === 'PENDING_PAYMENT' && (
+                  <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <button className="btn btn-secondary btn-sm" disabled={busyId === b.id} onClick={() => markPaid(b.id)}>
+                      {busyId === b.id ? <span className="spinner spinner-dark" /> : 'Mark as paid manually'}
+                    </button>
+                    <span style={{ fontSize: 12, color: '#9CA3AF' }}>For bank transfer / cash — bypasses the card gateway.</span>
+                  </div>
+                )}
 
                 {b.refundStatus === 'PENDING' && (
                   <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 10 }}>

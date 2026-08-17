@@ -237,7 +237,7 @@ export default function BookingTrackerPage() {
             </div>
           )}
 
-          {booking.status === 'CHECKED_IN' && new Date() >= new Date(booking.checkOutDate + 'T00:00:00') && (
+          {booking.status === 'CHECKED_IN' && (
             <div style={{ background: '#EDE9FE', border: '1px solid #C4B5FD', borderRadius: 10, padding: '14px', marginTop: 16 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                 <DoorOpen size={16} color="#5B21B6" />
