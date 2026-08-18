@@ -229,3 +229,36 @@ export interface CleaningTask {
   notes: string | null
   createdAt: string
 }
+
+// ── Stay cleaning (guest-requested, during an active stay) ────────────────
+
+export interface CleaningSettings {
+  stayCleaningPrice: number | null
+  estimatedDurationMinutes: number
+  enabledWindows: string[]
+  allowGuestRequestedCleaning: boolean
+}
+
+export type StayCleaningRequestStatus = 'PENDING_PAYMENT' | 'PAID' | 'CANCELLED'
+
+export interface StayCleaningRequest {
+  id: string
+  bookingId: string
+  requestedDate: string
+  timeWindow: string
+  price: number
+  currency: string
+  status: StayCleaningRequestStatus
+  paymentReference: string
+  createdAt: string
+}
+
+export interface StayCleaningOptions {
+  available: boolean
+  price: number | null
+  currency: string
+  windows: string[]
+  minDate: string
+  maxDate: string
+  requests: StayCleaningRequest[]
+}

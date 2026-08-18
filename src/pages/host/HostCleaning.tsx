@@ -156,7 +156,14 @@ export default function HostCleaning() {
                 <div key={task.id} className="surface-card" style={{ padding: 16 }}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
                     <div>
-                      <p style={{ fontSize: 14.5, fontWeight: 700, color: '#111827', margin: '0 0 4px' }}>{task.propertyTitle}</p>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                        <p style={{ fontSize: 14.5, fontWeight: 700, color: '#111827', margin: 0 }}>{task.propertyTitle}</p>
+                        {task.type === 'STAY' && (
+                          <span style={{ fontSize: 11, fontWeight: 700, color: '#7C3AED', background: '#EDE9FE', borderRadius: 6, padding: '2px 7px' }}>
+                            Stay cleaning
+                          </span>
+                        )}
+                      </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 14, fontSize: 13, color: '#6B7280', flexWrap: 'wrap' }}>
                         {task.guestName && <span>Guest: {task.guestName}</span>}
                         {task.checkedOutAt && (

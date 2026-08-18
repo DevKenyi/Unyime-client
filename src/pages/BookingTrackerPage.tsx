@@ -1,11 +1,11 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { ArrowLeft, Calendar, Users, Home, Star, Clock, XCircle, CheckCircle2, DoorOpen } from 'lucide-react'
+import { ArrowLeft, Calendar, Users, Home, Star, Clock, XCircle, CheckCircle2, DoorOpen, Sparkles } from 'lucide-react'
 import api from '../api/axios'
 import StatusPill from '../components/StatusPill'
 import { formatMoney } from '../utils/currency'
 import { formatCountdown, useCountdown } from '../hooks/useCountdown'
-import type { Booking, BookingStatus } from '../types'
+import type { Booking, BookingStatus, StayCleaningOptions } from '../types'
 
 const CANCELLABLE: BookingStatus[] = ['PENDING_PAYMENT', 'CONFIRMED']
 
@@ -30,6 +30,13 @@ export default function BookingTrackerPage() {
   const [reviewError, setReviewError] = useState('')
   const [reviewSubmitted, setReviewSubmitted] = useState(false)
 
+  const [cleaningOptions, setCleaningOptions] = useState<StayCleaningOptions | null>(null)
+  const [showCleaningForm, setShowCleaningForm] = useState(false)
+  const [cleaningDate, setCleaningDate] = useState('')
+  const [cleaningWindow, setCleaningWindow] = useState('')
+  const [requestingCleaning, setRequestingCleaning] = useState(false)
+  const [cleaningError, setCleaningError] = useState('')
+
   const fetchBooking = () => {
     if (!bookingId) return
     api.get<Booking>(`/api/public/bookings/${bookingId}`)
@@ -38,10 +45,24 @@ export default function BookingTrackerPage() {
       .finally(() => setLoading(false))
   }
 
+  const fetchCleaningOptions = () => {
+    if (!bookingId) return
+    api.get<StayCleaningOptions>(`/api/public/bookings/${bookingId}/stay-cleaning`)
+      .then(({ data }) => setCleaningOptions(data))
+      .catch(() => {})
+  }
+
   useEffect(() => {
     fetchBooking()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookingId])
+
+  // Only worth asking about once the stay is actually underway — matches the backend's own
+  // CHECKED_IN gate, this just avoids a pointless request before/after that window.
+  useEffect(() => {
+    if (booking?.status === 'CHECKED_IN') fetchCleaningOptions()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [booking?.status, bookingId])
 
   useEffect(() => {
     if (!bookingId) return
@@ -78,6 +99,37 @@ export default function BookingTrackerPage() {
       setCheckoutError(err.response?.data?.error ?? 'Could not confirm checkout.')
     } finally {
       setCheckingOut(false)
+    }
+  }
+
+  const handleRequestCleaning = async (e: FormEvent) => {
+    e.preventDefault()
+    if (!bookingId || !cleaningDate || !cleaningWindow) return
+    setRequestingCleaning(true)
+    setCleaningError('')
+    try {
+      const { data: request } = await api.post<{ id: string }>(`/api/public/bookings/${bookingId}/stay-cleaning`, {
+        date: cleaningDate,
+        timeWindow: cleaningWindow,
+      })
+      const { data: payment } = await api.post<{ paymentLink: string }>(
+        '/api/payments/initiate-cleaning', { requestId: request.id }
+      )
+      window.location.href = payment.paymentLink
+    } catch (err: any) {
+      setCleaningError(err.response?.data?.error ?? 'Could not request cleaning — please try again.')
+      setRequestingCleaning(false)
+      fetchCleaningOptions()
+    }
+  }
+
+  const handleCancelCleaning = async (requestId: string) => {
+    if (!bookingId) return
+    try {
+      await api.post(`/api/public/bookings/${bookingId}/stay-cleaning/${requestId}/cancel`)
+      fetchCleaningOptions()
+    } catch {
+      // best-effort — the request just stays visible as pending payment if this fails
     }
   }
 
@@ -244,6 +296,72 @@ export default function BookingTrackerPage() {
             </div>
           )}
         </div>
+
+        {booking.status === 'CHECKED_IN' && cleaningOptions && (
+          <div className="surface-card" style={{ padding: 24, marginBottom: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+              <Sparkles size={16} color="#111827" />
+              <h2 style={{ fontSize: 16, fontWeight: 700, color: '#111827', margin: 0 }}>Cleaning</h2>
+            </div>
+            <p style={{ fontSize: 13, color: '#6B7280', margin: '0 0 16px' }}>Need your apartment cleaned during your stay?</p>
+
+            {cleaningOptions.requests.filter(r => r.status !== 'CANCELLED').map(r => (
+              <div key={r.id} className="surface-muted" style={{ padding: 14, marginBottom: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+                <div>
+                  <p style={{ fontSize: 13.5, fontWeight: 600, color: '#111827', margin: '0 0 2px' }}>
+                    {new Date(r.requestedDate + 'T00:00:00').toLocaleDateString('en-NG', { month: 'short', day: 'numeric' })} · {r.timeWindow}
+                  </p>
+                  <p style={{ fontSize: 12, color: '#6B7280', margin: 0 }}>
+                    {formatMoney(r.price, r.currency)} · {r.status === 'PAID' ? 'Confirmed' : 'Awaiting payment'}
+                  </p>
+                </div>
+                {r.status === 'PENDING_PAYMENT' && (
+                  <button className="btn btn-secondary btn-sm" onClick={() => handleCancelCleaning(r.id)}>Cancel</button>
+                )}
+              </div>
+            ))}
+
+            {!cleaningOptions.available && cleaningOptions.requests.length === 0 && (
+              <p style={{ fontSize: 13, color: '#9CA3AF', margin: 0 }}>Stay cleaning isn't available for this property.</p>
+            )}
+
+            {cleaningOptions.available && !showCleaningForm && (
+              <button className="btn btn-secondary btn-md" onClick={() => setShowCleaningForm(true)}>Request cleaning</button>
+            )}
+
+            {cleaningOptions.available && showCleaningForm && (
+              <form onSubmit={handleRequestCleaning}>
+                <div className="form-row-2" style={{ display: 'grid', gap: 12, marginBottom: 12 }}>
+                  <div className="form-group">
+                    <label>Cleaning date</label>
+                    <input
+                      type="date" className="input" required
+                      min={cleaningOptions.minDate} max={cleaningOptions.maxDate}
+                      value={cleaningDate} onChange={e => setCleaningDate(e.target.value)}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Time window</label>
+                    <select className="input" required value={cleaningWindow} onChange={e => setCleaningWindow(e.target.value)}>
+                      <option value="">— Select —</option>
+                      {cleaningOptions.windows.map(w => <option key={w} value={w}>{w}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <p style={{ fontSize: 13, color: '#374151', margin: '0 0 12px' }}>
+                  Professional cleaning during your stay: <strong>{formatMoney(cleaningOptions.price ?? 0, cleaningOptions.currency)}</strong>
+                </p>
+                {cleaningError && <p style={{ color: '#DC2626', fontSize: 13, marginBottom: 10 }}>{cleaningError}</p>}
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button type="button" className="btn btn-secondary btn-md" onClick={() => setShowCleaningForm(false)}>Cancel</button>
+                  <button type="submit" className="btn btn-primary btn-md" disabled={requestingCleaning}>
+                    {requestingCleaning ? <span className="spinner" /> : 'Request & pay'}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        )}
 
         {(booking.status === 'CHECKED_OUT' || booking.status === 'COMPLETED') && !reviewSubmitted && (
           <form onSubmit={handleReview} className="surface-card" style={{ padding: 24 }}>
