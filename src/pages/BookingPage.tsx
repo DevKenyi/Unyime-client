@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import type { DateRange } from 'react-day-picker'
-import { ArrowLeft, Users, User, Phone, Star, MapPin, Check, Clock } from 'lucide-react'
+import { ArrowLeft, Users, User, Phone, Mail, Star, MapPin, Check, Clock } from 'lucide-react'
 import api from '../api/axios'
 import { formatMoney } from '../utils/currency'
 import { formatCountdown, useCountdown } from '../hooks/useCountdown'
@@ -48,6 +48,7 @@ export default function BookingPage() {
   const [guestCount, setGuestCount] = useState(1)
   const [guestName, setGuestName] = useState('')
   const [guestPhone, setGuestPhone] = useState('')
+  const [guestEmail, setGuestEmail] = useState('')
 
   // Set once the booking (and its 2-hour hold) actually exists on the backend — from that point
   // dates/guests are locked in and the countdown below is authoritative, not a locally-made-up one.
@@ -125,7 +126,7 @@ export default function BookingPage() {
 
   const goToReview = (e?: FormEvent) => {
     e?.preventDefault()
-    if (guestsOverCapacity || !guestName.trim() || !guestPhone.trim()) return
+    if (guestsOverCapacity || !guestName.trim() || !guestPhone.trim() || !guestEmail.trim()) return
     setStep('review')
   }
 
@@ -141,6 +142,7 @@ export default function BookingPage() {
         propertySlug: slug,
         guestName,
         guestPhone,
+        guestEmail,
         checkInDate,
         checkOutDate,
         guestCount,
@@ -318,9 +320,18 @@ export default function BookingPage() {
                   />
                 </div>
 
+                <div className="form-group">
+                  <label><Mail size={13} style={{ marginRight: 4, verticalAlign: -2 }} />Email address</label>
+                  <input
+                    type="email" className="input" required placeholder="you@example.com"
+                    value={guestEmail} onChange={e => setGuestEmail(e.target.value)}
+                  />
+                  <p style={{ fontSize: 12, color: '#9CA3AF', marginTop: 4 }}>We'll send your booking confirmation and reminders here.</p>
+                </div>
+
                 <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
                   <button type="button" className="btn btn-secondary btn-lg" onClick={() => setStep('dates')}>← Back</button>
-                  <button type="submit" className="btn btn-primary btn-lg" style={{ flex: 1 }} disabled={guestsOverCapacity || !guestName.trim() || !guestPhone.trim()}>
+                  <button type="submit" className="btn btn-primary btn-lg" style={{ flex: 1 }} disabled={guestsOverCapacity || !guestName.trim() || !guestPhone.trim() || !guestEmail.trim()}>
                     Continue to review →
                   </button>
                 </div>
@@ -350,7 +361,8 @@ export default function BookingPage() {
 
                 <div style={{ fontSize: 13.5, color: '#374151', marginBottom: 16 }}>
                   <p style={{ margin: '0 0 2px', fontWeight: 600, color: '#111827' }}>{guestName}</p>
-                  <p style={{ margin: 0, color: '#6B7280' }}>{guestPhone}</p>
+                  <p style={{ margin: '0 0 2px', color: '#6B7280' }}>{guestPhone}</p>
+                  <p style={{ margin: 0, color: '#6B7280' }}>{guestEmail}</p>
                 </div>
 
                 <div className="surface-muted" style={{ padding: 16, marginBottom: 8 }}>

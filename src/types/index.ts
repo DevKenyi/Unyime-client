@@ -89,6 +89,7 @@ export interface Booking {
   propertyTitle: string
   guestName: string
   guestPhone: string
+  guestEmail: string
   checkInDate: string
   checkOutDate: string
   nights: number

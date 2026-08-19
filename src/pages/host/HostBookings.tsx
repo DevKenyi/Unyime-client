@@ -62,7 +62,7 @@ export default function HostBookings() {
                   <div>
                     <p style={{ fontSize: 14.5, fontWeight: 700, color: '#111827', margin: '0 0 4px' }}>{b.propertyTitle}</p>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 14, fontSize: 13, color: '#6B7280', flexWrap: 'wrap' }}>
-                      <span>{b.guestName} · {b.guestPhone}</span>
+                      <span>{b.guestName} · {b.guestPhone}{b.guestEmail ? ` · ${b.guestEmail}` : ''}</span>
                       <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                         <Calendar size={13} /> {b.checkInDate} → {b.checkOutDate}
                       </span>
