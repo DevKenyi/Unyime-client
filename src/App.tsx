@@ -10,6 +10,7 @@ import DiscoverPage        from './pages/DiscoverPage'
 import PropertyDetailPage  from './pages/PropertyDetailPage'
 import BookingPage         from './pages/BookingPage'
 import BookingTrackerPage  from './pages/BookingTrackerPage'
+import GuestLoginPage      from './pages/GuestLoginPage'
 
 import HostDashboard       from './pages/host/HostDashboard'
 import HostProperties      from './pages/host/HostProperties'
@@ -40,6 +41,7 @@ export default function App() {
           <Route path="/properties/:slug" element={<PropertyDetailPage />} />
           <Route path="/properties/:slug/book" element={<BookingPage />} />
           <Route path="/booking/:bookingId/status" element={<BookingTrackerPage />} />
+          <Route path="/guest/login" element={<GuestLoginPage />} />
 
           {/* Host dashboard */}
           <Route path="/host" element={<Navigate to="/host/dashboard" replace />} />
