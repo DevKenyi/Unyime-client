@@ -397,7 +397,7 @@ export default function BookingPage() {
                   <p style={{ fontSize: 12, color: '#9CA3AF', marginTop: 4 }}>We'll send your booking confirmation and reminders here.</p>
                 </div>
 
-                <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
+                <div className="uy-step-actions" style={{ display: 'flex', gap: 10, marginTop: 20 }}>
                   <button type="button" className="btn btn-secondary btn-lg" onClick={() => setStep('dates')}>← Back</button>
                   <button type="submit" className="btn btn-primary btn-lg" style={{ flex: 1 }} disabled={guestsOverCapacity || !guestName.trim() || !guestPhone.trim() || !guestEmail.trim()}>
                     Continue to review →
@@ -460,7 +460,7 @@ export default function BookingPage() {
                   </div>
                 )}
 
-                <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
+                <div className="uy-step-actions" style={{ display: 'flex', gap: 10, marginTop: 20 }}>
                   <button type="button" className="btn btn-secondary btn-lg" onClick={() => setStep('guests')} disabled={reserving}>← Back</button>
                   <button type="button" className="btn btn-primary btn-lg" style={{ flex: 1 }} onClick={handleReserve} disabled={reserving || !termsAccepted}>
                     {reserving ? <><span className="spinner" /> Reserving…</> : 'Reserve & continue to payment →'}

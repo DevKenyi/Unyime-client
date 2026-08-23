@@ -50,6 +50,14 @@ body {
   .btn-lg { min-height: 48px; }
 }
 
+@media (max-width: 480px) {
+  /* A "← Back" button beside a flex:1 primary CTA (e.g. "Reserve & continue to payment →")
+     needs more width than a narrow phone has — .btn's white-space: nowrap means it overflows
+     rather than shrinks. Stack them instead of squeezing them onto one row. */
+  .uy-step-actions { flex-direction: column; }
+  .uy-step-actions .btn { width: 100%; white-space: normal; }
+}
+
 #root { min-height: 100vh; }
 
 /* ── Scrollbar hide ─────────────────────────────────────── */
