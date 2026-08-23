@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import type { DateRange } from 'react-day-picker'
-import { ArrowLeft, Users, User, Phone, Mail, Star, MapPin, Check, Clock } from 'lucide-react'
+import { ArrowLeft, Users, User, Phone, Mail, Star, MapPin, Check, Clock, Upload, X, ShieldCheck } from 'lucide-react'
 import api from '../api/axios'
 import { formatMoney } from '../utils/currency'
 import { formatCountdown, useCountdown } from '../hooks/useCountdown'
+import { uploadImage } from '../utils/cloudinaryUpload'
 import DateRangeCalendar from '../components/DateRangeCalendar'
 import PlaceholderImage from '../components/landing/PlaceholderImage'
 import TermsContent, { TERMS_VERSION } from '../components/TermsContent'
@@ -14,7 +15,7 @@ import {
   parseUnavailableRanges,
   type UnavailableRange,
 } from '../utils/availability'
-import type { CreateBookingResult, Property, PropertyAvailability } from '../types'
+import type { CreateBookingResult, GuestKycStatusInfo, IdDocumentType, Property, PropertyAvailability } from '../types'
 
 const SERVICE_CHARGE_RATE = 0.10
 
@@ -61,6 +62,17 @@ export default function BookingPage() {
   const [payingAgain, setPayingAgain] = useState(false)
   const [payError, setPayError] = useState('')
   const [payReason, setPayReason] = useState('')
+
+  // Optional, non-blocking ID verification — offered inline once the booking (and its hold)
+  // exists, never required to complete payment. See BookingService#submitGuestKyc.
+  const [guestKyc, setGuestKyc] = useState<GuestKycStatusInfo | null>(null)
+  const [kycLegalName, setKycLegalName] = useState('')
+  const [kycIdType, setKycIdType] = useState<IdDocumentType>('NATIONAL_ID')
+  const [kycIdUrl, setKycIdUrl] = useState('')
+  const [kycUploading, setKycUploading] = useState(false)
+  const [kycSubmitting, setKycSubmitting] = useState(false)
+  const [kycError, setKycError] = useState('')
+  const kycFileInputRef = useRef<HTMLInputElement>(null)
 
   const fetchAvailability = useCallback(() => {
     if (!slug) return Promise.resolve()
@@ -195,6 +207,51 @@ export default function BookingPage() {
           .then(({ data }) => setCreatedBooking({ bookingId, expiresAt: data.expiresAt }))
           .catch(() => {})
       }
+    }
+  }
+
+  useEffect(() => {
+    if (!createdBooking?.bookingId) return
+    api.get<GuestKycStatusInfo>(`/api/public/bookings/${createdBooking.bookingId}/kyc-status`)
+      .then(({ data }) => {
+        setGuestKyc(data)
+        if (data.legalName) setKycLegalName(data.legalName)
+        if (data.idDocumentType) setKycIdType(data.idDocumentType)
+        if (data.idDocumentUrl) setKycIdUrl(data.idDocumentUrl)
+      })
+      .catch(() => {})
+  }, [createdBooking?.bookingId])
+
+  const handleKycFile = async (file: File | undefined) => {
+    if (!file) return
+    setKycError('')
+    setKycUploading(true)
+    try {
+      const url = await uploadImage(file, 'kyc', '/api/public/uploads/signature')
+      setKycIdUrl(url)
+    } catch (err: any) {
+      setKycError(err.message ?? 'Could not upload this photo.')
+    } finally {
+      setKycUploading(false)
+      if (kycFileInputRef.current) kycFileInputRef.current.value = ''
+    }
+  }
+
+  const handleSubmitKyc = async (e: FormEvent) => {
+    e.preventDefault()
+    if (!createdBooking?.bookingId) return
+    setKycSubmitting(true)
+    setKycError('')
+    try {
+      const { data } = await api.post<GuestKycStatusInfo>(
+        `/api/public/bookings/${createdBooking.bookingId}/kyc`,
+        { legalName: kycLegalName, idDocumentType: kycIdType, idDocumentUrl: kycIdUrl }
+      )
+      setGuestKyc(data)
+    } catch (err: any) {
+      setKycError(err.response?.data?.error ?? 'Could not submit verification.')
+    } finally {
+      setKycSubmitting(false)
     }
   }
 
@@ -411,44 +468,126 @@ export default function BookingPage() {
             )}
 
             {step === 'payment' && (
-              <div style={{ textAlign: 'center', padding: '20px 0' }}>
-                {!payError ? (
-                  <>
-                    <span className="spinner spinner-dark" style={{ marginBottom: 16 }} />
-                    <h2 style={{ fontSize: 17, fontWeight: 700, color: '#111827', margin: '0 0 6px' }}>Taking you to secure payment…</h2>
-                    <p style={{ fontSize: 13.5, color: '#6B7280', margin: 0 }}>Your dates are held — don't close this tab.</p>
-                  </>
-                ) : (
-                  <>
-                    <div style={{ background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: 10, padding: 16, textAlign: 'left' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                        <Clock size={16} color="#92400E" />
-                        <span style={{ fontSize: 13.5, fontWeight: 700, color: '#92400E' }}>
-                          {createdBooking?.expiresAt ? `Your reservation is held for ${formatCountdown(remainingMs)}` : 'Your reservation is held'}
-                        </span>
-                      </div>
-                      <p style={{ fontSize: 12.5, color: '#92400E', margin: '0 0 12px' }}>{payError}</p>
-                      {payReason === 'GUEST_TERMS_REQUIRED' && createdBooking && (
+              <>
+                <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                  {!payError ? (
+                    <>
+                      <span className="spinner spinner-dark" style={{ marginBottom: 16 }} />
+                      <h2 style={{ fontSize: 17, fontWeight: 700, color: '#111827', margin: '0 0 6px' }}>Taking you to secure payment…</h2>
+                      <p style={{ fontSize: 13.5, color: '#6B7280', margin: 0 }}>Your dates are held — don't close this tab.</p>
+                    </>
+                  ) : (
+                    <>
+                      <div style={{ background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: 10, padding: 16, textAlign: 'left' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                          <Clock size={16} color="#92400E" />
+                          <span style={{ fontSize: 13.5, fontWeight: 700, color: '#92400E' }}>
+                            {createdBooking?.expiresAt ? `Your reservation is held for ${formatCountdown(remainingMs)}` : 'Your reservation is held'}
+                          </span>
+                        </div>
+                        <p style={{ fontSize: 12.5, color: '#92400E', margin: '0 0 12px' }}>{payError}</p>
+                        {payReason === 'GUEST_TERMS_REQUIRED' && createdBooking && (
+                          <button
+                            className="btn btn-secondary btn-md"
+                            style={{ marginBottom: 12 }}
+                            onClick={() => api.post(`/api/public/bookings/${createdBooking.bookingId}/accept-terms`)
+                              .then(() => initiatePayment(createdBooking.bookingId))}
+                          >
+                            Accept terms & retry
+                          </button>
+                        )}
                         <button
-                          className="btn btn-secondary btn-md"
-                          style={{ marginBottom: 12 }}
-                          onClick={() => api.post(`/api/public/bookings/${createdBooking.bookingId}/accept-terms`)
-                            .then(() => initiatePayment(createdBooking.bookingId))}
+                          className="btn btn-primary btn-md"
+                          onClick={() => createdBooking && initiatePayment(createdBooking.bookingId)}
+                          disabled={payingAgain}
                         >
-                          Accept terms & retry
+                          {payingAgain ? <span className="spinner" /> : 'Try payment again'}
                         </button>
-                      )}
-                      <button
-                        className="btn btn-primary btn-md"
-                        onClick={() => createdBooking && initiatePayment(createdBooking.bookingId)}
-                        disabled={payingAgain}
-                      >
-                        {payingAgain ? <span className="spinner" /> : 'Try payment again'}
-                      </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {createdBooking && guestKyc && guestKyc.status !== 'VERIFIED' && (
+                  <div className="surface-muted" style={{ padding: 16, marginTop: 4, textAlign: 'left' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                      <ShieldCheck size={15} color="#095C46" />
+                      <p style={{ fontSize: 13.5, fontWeight: 700, color: '#111827', margin: 0 }}>Verify your identity (optional)</p>
                     </div>
-                  </>
+                    <p style={{ fontSize: 12.5, color: '#6B7280', margin: '0 0 12px' }}>
+                      Speeds up any future support requests — never required to complete this booking.
+                    </p>
+
+                    {guestKyc.status === 'PENDING' ? (
+                      <p style={{ fontSize: 13, color: '#374151', margin: 0 }}>Submitted — we'll review it shortly.</p>
+                    ) : (
+                      <form onSubmit={handleSubmitKyc}>
+                        <div className="form-group">
+                          <label>Legal name</label>
+                          <input
+                            className="input" required
+                            value={kycLegalName} onChange={e => setKycLegalName(e.target.value)}
+                            placeholder="As it appears on your ID"
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label>ID document type</label>
+                          <select className="input" value={kycIdType} onChange={e => setKycIdType(e.target.value as IdDocumentType)}>
+                            <option value="NATIONAL_ID">National ID</option>
+                            <option value="PASSPORT">Passport</option>
+                            <option value="DRIVERS_LICENSE">Driver's License</option>
+                          </select>
+                        </div>
+                        <div className="form-group">
+                          <label>ID document photo</label>
+                          <div
+                            onClick={() => !kycUploading && kycFileInputRef.current?.click()}
+                            className="surface-card"
+                            style={{
+                              height: 140, borderRadius: 12, cursor: kycUploading ? 'default' : 'pointer',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              position: 'relative', overflow: 'hidden', border: '1.5px dashed #D1D5DB',
+                            }}
+                          >
+                            {kycIdUrl ? (
+                              <>
+                                <img src={kycIdUrl} alt="ID document" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                <button
+                                  type="button"
+                                  onClick={e => { e.stopPropagation(); setKycIdUrl('') }}
+                                  style={{
+                                    position: 'absolute', top: 8, right: 8, width: 24, height: 24, borderRadius: '50%',
+                                    background: 'rgba(17,24,39,0.6)', color: '#fff', border: 'none', cursor: 'pointer',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                  }}
+                                  aria-label="Remove photo"
+                                >
+                                  <X size={13} />
+                                </button>
+                              </>
+                            ) : kycUploading ? (
+                              <span className="spinner spinner-dark" />
+                            ) : (
+                              <div style={{ textAlign: 'center', color: '#9CA3AF' }}>
+                                <Upload size={20} style={{ marginBottom: 4 }} />
+                                <p style={{ fontSize: 12.5, margin: 0 }}>Click to upload a photo/scan of your ID</p>
+                              </div>
+                            )}
+                          </div>
+                          <input
+                            ref={kycFileInputRef} type="file" accept="image/*" hidden
+                            onChange={e => handleKycFile(e.target.files?.[0])}
+                          />
+                        </div>
+                        {kycError && <p style={{ color: '#DC2626', fontSize: 13, marginBottom: 10 }}>{kycError}</p>}
+                        <button type="submit" className="btn btn-secondary btn-sm" disabled={kycSubmitting || kycUploading || !kycIdUrl || !kycLegalName.trim()}>
+                          {kycSubmitting ? <span className="spinner" /> : guestKyc.status === 'REJECTED' ? 'Resubmit' : 'Submit for review'}
+                        </button>
+                      </form>
+                    )}
+                  </div>
                 )}
-              </div>
+              </>
             )}
           </div>
 

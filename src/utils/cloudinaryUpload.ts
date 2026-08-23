@@ -10,14 +10,15 @@ interface UploadSignature {
 
 /**
  * Uploads a file straight to Cloudinary using a short-lived signature from our backend
- * (POST /api/host/uploads/signature, or /api/guest/uploads/signature for a guest session) — the
- * file never round-trips through our own server. context picks the destination folder on
- * Cloudinary's side (e.g. property photos vs KYC docs).
+ * (POST /api/host/uploads/signature, /api/guest/uploads/signature for a guest session, or
+ * /api/public/uploads/signature for the no-login booking flow) — the file never round-trips
+ * through our own server. context picks the destination folder on Cloudinary's side (e.g.
+ * property photos vs KYC docs).
  */
 export async function uploadImage(
   file: File,
   context: 'properties' | 'kyc' = 'properties',
-  signatureEndpoint: '/api/host/uploads/signature' | '/api/guest/uploads/signature' = '/api/host/uploads/signature'
+  signatureEndpoint: '/api/host/uploads/signature' | '/api/guest/uploads/signature' | '/api/public/uploads/signature' = '/api/host/uploads/signature'
 ): Promise<string> {
   const { data: sig } = await api.post<UploadSignature>(`${signatureEndpoint}?context=${context}`)
 
