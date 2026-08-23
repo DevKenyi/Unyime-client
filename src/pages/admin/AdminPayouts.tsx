@@ -24,6 +24,8 @@ export default function AdminPayouts() {
   const [holdReason, setHoldReason] = useState('')
   const [transferReference, setTransferReference] = useState('')
   const [actionError, setActionError] = useState('')
+  const [checking, setChecking] = useState(false)
+  const [checkResult, setCheckResult] = useState<string | null>(null)
 
   const load = () => {
     setLoading(true)
@@ -55,14 +57,36 @@ export default function AdminPayouts() {
     }
   }
 
+  const runEligibilityCheck = async () => {
+    setChecking(true)
+    setCheckResult(null)
+    try {
+      const { data } = await api.post<number>('/api/admin/payouts/run-eligibility-check')
+      setCheckResult(data === 0 ? 'No payouts became eligible.' : `${data} payout${data === 1 ? '' : 's'} promoted to eligible.`)
+      load()
+    } catch (err: any) {
+      setCheckResult(err.response?.data?.error ?? 'Could not run the check.')
+    } finally {
+      setChecking(false)
+    }
+  }
+
   return (
     <DashboardLayout>
       <div className="page-shell">
-        <div className="page-header">
-          <h1 className="page-title">Payouts</h1>
-          <p className="page-subtitle">
-            Every booking's host earnings — gross amount, commission, payout status, and dispute state.
-          </p>
+        <div className="page-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+          <div>
+            <h1 className="page-title">Payouts</h1>
+            <p className="page-subtitle">
+              Every booking's host earnings — gross amount, commission, payout status, and dispute state.
+            </p>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <button className="btn btn-secondary btn-sm" disabled={checking} onClick={runEligibilityCheck}>
+              {checking ? 'Checking…' : 'Run eligibility check now'}
+            </button>
+            {checkResult && <p style={{ fontSize: 12.5, color: '#6B7280', margin: '6px 0 0' }}>{checkResult}</p>}
+          </div>
         </div>
 
         {loading && <div style={{ textAlign: 'center', padding: '60px 0' }}><span className="spinner spinner-dark" /></div>}
