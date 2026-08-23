@@ -230,7 +230,7 @@ export interface KycStatusInfo {
   status: KycStatus
   submittedAt: string | null
   verifiedAt: string | null
-  bankCode: string | null
+  bankName: string | null
   bankAccountNumber: string | null
   bankAccountName: string | null
 }

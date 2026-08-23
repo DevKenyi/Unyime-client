@@ -32,7 +32,7 @@ export default function HostKyc() {
   const [accepting, setAccepting] = useState(false)
   const [termsError, setTermsError] = useState('')
 
-  const [bankCode, setBankCode] = useState('')
+  const [bankName, setBankName] = useState('')
   const [bankAccountNumber, setBankAccountNumber] = useState('')
   const [bankAccountName, setBankAccountName] = useState('')
   const [savingBank, setSavingBank] = useState(false)
@@ -50,7 +50,7 @@ export default function HostKyc() {
         if (kycRes.data.legalName) setLegalName(kycRes.data.legalName)
         if (kycRes.data.idDocumentType) setIdDocumentType(kycRes.data.idDocumentType)
         if (kycRes.data.idDocumentUrl) setIdDocumentUrl(kycRes.data.idDocumentUrl)
-        if (kycRes.data.bankCode) setBankCode(kycRes.data.bankCode)
+        if (kycRes.data.bankName) setBankName(kycRes.data.bankName)
         if (kycRes.data.bankAccountNumber) setBankAccountNumber(kycRes.data.bankAccountNumber)
         if (kycRes.data.bankAccountName) setBankAccountName(kycRes.data.bankAccountName)
       })
@@ -63,7 +63,7 @@ export default function HostKyc() {
     setBankError('')
     setBankSaved(false)
     try {
-      const { data } = await api.put<KycStatusInfo>('/api/host/bank-details', { bankCode, bankAccountNumber, bankAccountName })
+      const { data } = await api.put<KycStatusInfo>('/api/host/bank-details', { bankName, bankAccountNumber, bankAccountName })
       setKyc(data)
       setBankSaved(true)
     } catch (err: any) {
@@ -264,8 +264,8 @@ export default function HostKyc() {
             ) : (
               <form onSubmit={handleSaveBankDetails}>
                 <div className="form-group">
-                  <label>Bank code</label>
-                  <input className="input" required value={bankCode} onChange={e => setBankCode(e.target.value)} placeholder="e.g. 044" />
+                  <label>Bank name</label>
+                  <input className="input" required value={bankName} onChange={e => setBankName(e.target.value)} placeholder="e.g. GTBank" />
                 </div>
                 <div className="form-group">
                   <label>Account number</label>
