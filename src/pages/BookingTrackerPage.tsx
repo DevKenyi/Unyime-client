@@ -50,12 +50,27 @@ export default function BookingTrackerPage() {
   const [requestingCleaning, setRequestingCleaning] = useState(false)
   const [cleaningError, setCleaningError] = useState('')
 
+  const [checkingPayment, setCheckingPayment] = useState(false)
+  const autoVerifiedRef = useRef(false)
+
   const fetchBooking = () => {
     if (!bookingId) return
     api.get<Booking>(`/api/public/bookings/${bookingId}`)
       .then(({ data }) => setBooking(data))
       .catch(() => setError('This booking could not be found.'))
       .finally(() => setLoading(false))
+  }
+
+  /** Confirmation normally arrives via Flutterwave's webhook, but that's a push we don't
+   * control — if it's slow, misconfigured, or never arrives, this independently double-checks
+   * with Flutterwave's own verify API and settles the booking the same way, so a real payment
+   * doesn't leave the guest stuck looking "pending" indefinitely. Safe to call repeatedly. */
+  const checkPaymentStatus = () => {
+    if (!bookingId) return
+    setCheckingPayment(true)
+    api.post<Booking>(`/api/public/bookings/${bookingId}/verify-payment`)
+      .then(({ data }) => setBooking(data))
+      .finally(() => setCheckingPayment(false))
   }
 
   const fetchCleaningOptions = () => {
@@ -69,6 +84,17 @@ export default function BookingTrackerPage() {
     fetchBooking()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookingId])
+
+  // Once, right when the guest lands here (typically right after being redirected back from
+  // Flutterwave) — if the webhook already confirmed it this is a harmless no-op, but if it
+  // hasn't landed yet this actively checks instead of leaving the guest staring at "pending".
+  useEffect(() => {
+    if (booking?.status === 'PENDING_PAYMENT' && !autoVerifiedRef.current) {
+      autoVerifiedRef.current = true
+      checkPaymentStatus()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [booking?.status])
 
   // Only worth asking about once the stay is actually underway — matches the backend's own
   // CHECKED_IN gate, this just avoids a pointless request before/after that window.
@@ -308,6 +334,12 @@ export default function BookingTrackerPage() {
               )}
               <button className="btn btn-primary btn-md" onClick={handlePayAgain} disabled={payingAgain}>
                 {payingAgain ? <span className="spinner" /> : 'Complete payment'}
+              </button>
+              <button
+                className="btn btn-secondary btn-md" style={{ marginLeft: 8 }}
+                onClick={checkPaymentStatus} disabled={checkingPayment}
+              >
+                {checkingPayment ? <span className="spinner" /> : 'Already paid? Check status'}
               </button>
             </div>
           )}
