@@ -1,7 +1,7 @@
 // Keep in sync with the backend's terms.current-version (application.properties) — bumping one
 // without the other means guests/hosts would be accepting text that doesn't match what the
 // acceptance record actually points to.
-export const TERMS_VERSION = '2026-08-23-v1'
+export const TERMS_VERSION = '2026-08-23-v2'
 
 const h2Style = { fontSize: 15.5, fontWeight: 700, color: '#111827', margin: '22px 0 6px' } as const
 
@@ -18,12 +18,13 @@ export default function TermsContent() {
       <h2 style={h2Style}>1. Identity & Account Information</h2>
       <p>
         Hosts are required to verify their identity with a valid form of government-issued
-        identification before listing a property. Guests may optionally verify their identity.
-        Any identity information collected is used solely for <strong>identity verification,
-        safety, fraud prevention, dispute resolution, and legal compliance</strong> — not to
-        track you. It is stored securely and handled in accordance with applicable
-        data-protection and privacy laws (including Nigeria's NDPR and South Africa's POPIA,
-        where applicable).
+        identification before listing a property. Guests are required to submit identity
+        verification (a legal name and a valid form of government-issued identification) before
+        completing payment on a booking. Any identity information collected is used solely for
+        <strong> identity verification, safety, fraud prevention, dispute resolution, and legal
+        compliance</strong> — not to track you. It is stored securely and handled in accordance
+        with applicable data-protection and privacy laws (including Nigeria's NDPR and South
+        Africa's POPIA, where applicable).
       </p>
 
       <h2 style={h2Style}>2. Your Responsibilities</h2>
