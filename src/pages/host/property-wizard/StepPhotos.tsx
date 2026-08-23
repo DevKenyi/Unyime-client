@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
-import { ImagePlus, X } from 'lucide-react'
-import { uploadImage } from '../../../utils/cloudinaryUpload'
+import { ImagePlus, Video, X } from 'lucide-react'
+import { uploadImage, uploadVideo } from '../../../utils/cloudinaryUpload'
 import type { StepProps, WizardPhoto } from './wizardTypes'
 
 export default function StepPhotos({ state, update }: StepProps) {
@@ -8,6 +8,25 @@ export default function StepPhotos({ state, update }: StepProps) {
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
   const dragIndex = useRef<number | null>(null)
+
+  const videoInputRef = useRef<HTMLInputElement>(null)
+  const [uploadingVideo, setUploadingVideo] = useState(false)
+  const [videoError, setVideoError] = useState('')
+
+  const handleVideoFile = async (file: File | undefined) => {
+    if (!file) return
+    setVideoError('')
+    setUploadingVideo(true)
+    try {
+      const url = await uploadVideo(file)
+      update('videoUrl', url)
+    } catch (err: any) {
+      setVideoError(err.message ?? 'Could not upload this video.')
+    } finally {
+      setUploadingVideo(false)
+      if (videoInputRef.current) videoInputRef.current.value = ''
+    }
+  }
 
   const handleFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return
@@ -81,6 +100,40 @@ export default function StepPhotos({ state, update }: StepProps) {
       </div>
 
       {error && <p style={{ color: '#DC2626', fontSize: 12.5, marginTop: 10 }}>{error}</p>}
+
+      <h2 style={{ fontSize: 15, fontWeight: 700, color: '#111827', margin: '28px 0 4px' }}>Walkthrough video (optional)</h2>
+      <p style={{ fontSize: 13, color: '#6B7280', margin: '0 0 12px' }}>
+        A short video tour helps guests picture the space before booking.
+      </p>
+
+      {state.videoUrl ? (
+        <div style={{ position: 'relative', maxWidth: 360 }}>
+          <video src={state.videoUrl} controls style={{ width: '100%', borderRadius: 12, display: 'block' }} />
+          <button
+            type="button"
+            onClick={() => update('videoUrl', '')}
+            className="photo-tile-remove"
+            style={{ position: 'absolute', top: 8, right: 8 }}
+            aria-label="Remove video"
+          >
+            <X size={13} />
+          </button>
+        </div>
+      ) : (
+        <div className="photo-upload-tile" style={{ width: 160, height: 120 }} onClick={() => !uploadingVideo && videoInputRef.current?.click()}>
+          {uploadingVideo ? <span className="spinner spinner-dark" /> : (
+            <>
+              <Video size={22} />
+              <span>Add video</span>
+            </>
+          )}
+        </div>
+      )}
+      <input
+        ref={videoInputRef} type="file" accept="video/*" hidden
+        onChange={e => handleVideoFile(e.target.files?.[0])}
+      />
+      {videoError && <p style={{ color: '#DC2626', fontSize: 12.5, marginTop: 10 }}>{videoError}</p>}
     </div>
   )
 }

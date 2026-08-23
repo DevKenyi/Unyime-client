@@ -80,6 +80,7 @@ export default function HostPropertyForm() {
           bathrooms: p.bathrooms,
           amenities: p.amenities,
           photos: wizardPhotos,
+          videoUrl: p.videoUrl ?? '',
           pricePerNight: String(p.pricePerNight),
           cleaningFee: p.cleaningFee != null ? String(p.cleaningFee) : '',
           minNights: String(p.minNights),
@@ -125,6 +126,7 @@ export default function HostPropertyForm() {
       houseRules: state.houseRules || null,
       amenities: state.amenities,
       coverImageUrl: state.photos[0]?.url ?? null,
+      videoUrl: state.videoUrl || null,
     }
     try {
       let id = savedPropertyId

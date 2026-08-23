@@ -40,6 +40,7 @@ export interface Property {
   houseRules: string | null
   amenities: string[]
   coverImageUrl: string | null
+  videoUrl: string | null
   isActive: boolean
   status: PropertyStatus
   /** Whether the unit is physically ready right now — separate from the approval status above. */

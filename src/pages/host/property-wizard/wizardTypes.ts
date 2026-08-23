@@ -20,6 +20,7 @@ export interface WizardState {
   bathrooms: number
   amenities: string[]
   photos: WizardPhoto[]
+  videoUrl: string
   pricePerNight: string
   cleaningFee: string
   minNights: string
@@ -39,6 +40,7 @@ export const EMPTY_WIZARD_STATE: WizardState = {
   bathrooms: 1,
   amenities: [],
   photos: [],
+  videoUrl: '',
   pricePerNight: '',
   cleaningFee: '',
   minNights: '1',

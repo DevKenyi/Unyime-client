@@ -140,6 +140,16 @@ export default function PropertyDetailPage() {
               </div>
             )}
 
+            {property.videoUrl && (
+              <div style={{ marginBottom: 24 }}>
+                <h2 style={{ fontSize: 17, fontWeight: 700, color: '#111827', margin: '0 0 10px' }}>Video tour</h2>
+                <video
+                  src={property.videoUrl} controls playsInline
+                  style={{ width: '100%', maxHeight: 420, borderRadius: 14, background: '#000', display: 'block' }}
+                />
+              </div>
+            )}
+
             {availability && availability.unavailableDates.length > 0 && (
               <div style={{ marginBottom: 24 }}>
                 <h2 style={{ fontSize: 17, fontWeight: 700, color: '#111827', margin: '0 0 10px', display: 'flex', alignItems: 'center', gap: 7 }}>
