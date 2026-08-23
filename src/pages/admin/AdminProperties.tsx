@@ -84,6 +84,23 @@ export default function AdminProperties() {
                           <button className="btn btn-danger btn-sm" disabled={busyId === p.id} onClick={() => decide(p.id, 'reject')}>Reject</button>
                         </div>
                       </div>
+
+                      {p.photos && p.photos.length > 0 ? (
+                        <div style={{ display: 'flex', gap: 8, marginTop: 12, overflowX: 'auto' }}>
+                          {p.photos.map(photo => (
+                            <img
+                              key={photo.id} src={photo.imageUrl} alt={photo.caption ?? ''}
+                              style={{ width: 100, height: 76, objectFit: 'cover', borderRadius: 8, flexShrink: 0 }}
+                            />
+                          ))}
+                        </div>
+                      ) : (
+                        <p style={{ fontSize: 12.5, color: '#9CA3AF', margin: '10px 0 0' }}>No photos uploaded yet.</p>
+                      )}
+                      {p.videoUrl && (
+                        <video src={p.videoUrl} controls style={{ width: 200, maxWidth: '100%', borderRadius: 8, marginTop: 8, display: 'block' }} />
+                      )}
+
                       {errors[p.id] && <p style={{ color: '#DC2626', fontSize: 12.5, marginTop: 8 }}>{errors[p.id]}</p>}
                     </div>
                   ))}
