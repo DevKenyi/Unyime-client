@@ -21,6 +21,10 @@
 *, *::before, *::after { box-sizing: border-box; }
 html { background: var(--color-muted); }
 
+/* Defensive — one stray fixed-width element shouldn't be able to make the whole page
+   horizontally scrollable on a phone. */
+html, body { overflow-x: hidden; }
+
 body {
   margin: 0;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
@@ -28,6 +32,22 @@ body {
   background: var(--color-muted);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Mobile touch targets ───────────────────────────────────
+   iOS Safari zooms the whole page in on focus for any input under 16px — bumping to 16px on
+   small screens only, so desktop keeps its tighter 14px. Buttons get a touch-friendly minimum
+   height without changing their padding-driven size on larger screens. */
+@media (max-width: 640px) {
+  .input,
+  .form-group input,
+  .form-group textarea,
+  .form-group select {
+    font-size: 16px;
+  }
+  .btn-sm, .btn-md { min-height: 42px; }
+  .btn-lg { min-height: 48px; }
 }
 
 #root { min-height: 100vh; }
@@ -468,30 +488,36 @@ label {
    No react-day-picker CSS is imported anywhere — every visual state below
    is Unyimi's own, driven entirely through the classNames map passed to
    DayPicker in DateRangeCalendar.tsx. */
-.uy-cal { font-family: inherit; }
+.uy-cal { font-family: inherit; max-width: 100%; }
 
 .uy-cal-months { display: flex; gap: 36px; flex-wrap: wrap; }
-.uy-cal-month { flex: 1 1 260px; min-width: 260px; }
+.uy-cal-month {
+  flex: 1 1 260px; min-width: 0; max-width: 100%;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 4px;
+}
 
+/* Previous/next buttons flank the caption directly (navLayout="around") — Previous sits before
+   the first month's caption, Next after the last month's, so together they hug the calendar
+   itself instead of floating in a detached corner. */
 .uy-cal-caption {
   display: flex; align-items: center; justify-content: center;
-  padding: 4px 0 18px; position: relative;
+  flex: 1 1 auto; min-width: 0; padding: 4px 4px 18px;
 }
 .uy-cal-caption-label { font-size: 16px; font-weight: 700; color: #111827; letter-spacing: -0.2px; }
 
-.uy-cal-nav { display: flex; gap: 6px; position: absolute; top: 0; right: 0; }
 .uy-cal-nav-btn {
+  flex: 0 0 auto;
   width: 36px; height: 36px; border-radius: 50%;
   border: 1.5px solid var(--color-border); background: var(--color-surface);
   display: flex; align-items: center; justify-content: center;
-  cursor: pointer; color: #374151;
+  cursor: pointer; color: #374151; margin-bottom: 18px;
   transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s;
 }
 .uy-cal-nav-btn:hover:not(:disabled) { background: var(--color-primary-tint); border-color: var(--color-primary); color: var(--color-primary); }
 .uy-cal-nav-btn:active:not(:disabled) { transform: scale(0.94); }
 .uy-cal-nav-btn:disabled { opacity: 0.3; cursor: default; }
 
-.uy-cal-grid { border-collapse: separate; border-spacing: 0; width: 100%; }
+.uy-cal-grid { flex: 1 0 100%; border-collapse: separate; border-spacing: 0; width: 100%; }
 .uy-cal-weekday {
   font-size: 11.5px; font-weight: 700; color: var(--color-text-disabled);
   text-transform: uppercase; letter-spacing: 0.05em; padding-bottom: 10px; text-align: center;

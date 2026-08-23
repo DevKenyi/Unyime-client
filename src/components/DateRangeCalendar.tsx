@@ -41,7 +41,7 @@ export default function DateRangeCalendar({ selected, onSelect, unavailableRange
       selected={selected}
       onSelect={onSelect}
       disabled={disabled}
-      animate
+      navLayout="around"
       classNames={{
         root: 'uy-cal',
         months: 'uy-cal-months',
@@ -49,8 +49,8 @@ export default function DateRangeCalendar({ selected, onSelect, unavailableRange
         month_caption: 'uy-cal-caption',
         caption_label: 'uy-cal-caption-label',
         nav: 'uy-cal-nav',
-        button_previous: 'uy-cal-nav-btn',
-        button_next: 'uy-cal-nav-btn',
+        button_previous: 'uy-cal-nav-btn uy-cal-nav-prev',
+        button_next: 'uy-cal-nav-btn uy-cal-nav-next',
         month_grid: 'uy-cal-grid',
         weekdays: 'uy-cal-weekdays',
         weekday: 'uy-cal-weekday',
