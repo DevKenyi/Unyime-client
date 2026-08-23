@@ -44,7 +44,7 @@ export default function HostEarnings() {
         <div className="page-header">
           <h1 className="page-title">Earnings</h1>
           <p className="page-subtitle">
-            Payouts release automatically after checkout, once the protection window clears — nothing to request.
+            Payouts release automatically after check-in, once the protection window clears — nothing to request.
           </p>
         </div>
 

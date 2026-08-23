@@ -17,19 +17,19 @@ const STATUS_CFG: Record<PayoutStatus, { label: string; cls: string }> = {
 }
 
 /** Explains a PENDING payout's "not yet eligible" status — otherwise there's no way to tell from
- * the card alone whether it's waiting on the guest to check out or just sitting out the
- * post-checkout protection window. */
+ * the card alone whether it's waiting on the guest to check in or just sitting out the
+ * post-check-in protection window. Eligibility counts from check-in, not checkout — see
+ * HostPayoutService's payoutDelayHours comment for why. */
 function pendingExplanation(p: AdminPayout): string | null {
   if (p.payoutStatus !== 'PENDING') return null
-  if (p.bookingStatus !== 'CHECKED_OUT') return "Guest hasn't checked out yet"
-  if (!p.checkedOutAt) return 'Awaiting checkout confirmation'
+  if (!p.checkedInAt) return "Guest hasn't checked in yet"
 
-  const eligibleAt = new Date(p.checkedOutAt).getTime() + p.payoutDelayHours * 3600_000
+  const eligibleAt = new Date(p.checkedInAt).getTime() + p.payoutDelayHours * 3600_000
   const remainingMs = eligibleAt - Date.now()
   if (remainingMs <= 0) return 'Protection window has passed — will pick up on the next eligibility check'
 
   const hours = Math.ceil(remainingMs / 3600_000)
-  return `Checked out — eligible in ${hours < 24 ? `${hours}h` : `${Math.ceil(hours / 24)}d`}`
+  return `Checked in — eligible in ${hours < 24 ? `${hours}h` : `${Math.ceil(hours / 24)}d`}`
 }
 
 export default function AdminPayouts() {
