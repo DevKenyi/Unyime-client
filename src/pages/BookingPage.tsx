@@ -276,9 +276,6 @@ export default function BookingPage() {
 
   const stepIndex = STEPS.findIndex(s => s.key === step)
   const datesLocked = step === 'payment'
-  // Submitting is enough to unlock payment — admin review happens afterward, same trust model
-  // hosts already operate under (see PaymentService#requireVerification on the backend).
-  const kycSatisfied = guestKyc?.status === 'PENDING' || guestKyc?.status === 'VERIFIED'
 
   return (
     <div style={{ minHeight: '100vh', background: '#F5F3EE' }}>
@@ -517,12 +514,11 @@ export default function BookingPage() {
                         </span>
                       </div>
                       <p style={{ fontSize: 12.5, color: '#065F46', margin: '0 0 12px' }}>
-                        {kycSatisfied ? "You're ready to pay." : 'Verify your identity below to continue to payment.'}
+                        You're ready to pay — verify your identity below first if you'd like, or continue straight to payment.
                       </p>
                       <button
                         className="btn btn-primary btn-md"
                         onClick={() => createdBooking && initiatePayment(createdBooking.bookingId)}
-                        disabled={!kycSatisfied}
                       >
                         Continue to payment →
                       </button>
@@ -530,21 +526,18 @@ export default function BookingPage() {
                   )}
                 </div>
 
-                {createdBooking && !kycSatisfied && (
+                {createdBooking && guestKyc && guestKyc.status !== 'VERIFIED' && (
                   <div className="surface-muted" style={{ padding: 16, marginTop: 4, textAlign: 'left' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                       <ShieldCheck size={15} color="#095C46" />
-                      <p style={{ fontSize: 13.5, fontWeight: 700, color: '#111827', margin: 0 }}>Verify your identity (required)</p>
+                      <p style={{ fontSize: 13.5, fontWeight: 700, color: '#111827', margin: 0 }}>Verify your identity (optional)</p>
                     </div>
                     <p style={{ fontSize: 12.5, color: '#6B7280', margin: '0 0 12px' }}>
-                      Required to complete your booking — used for identity verification, safety, fraud
-                      prevention, dispute resolution, and legal compliance. See our Terms & Conditions.
+                      Speeds up any future support requests — never required to complete this booking.
                     </p>
 
-                    {!guestKyc ? (
-                      <div style={{ textAlign: 'center', padding: '12px 0' }}><span className="spinner spinner-dark" /></div>
-                    ) : guestKyc.status === 'PENDING' ? (
-                      <p style={{ fontSize: 13, color: '#374151', margin: 0 }}>Submitted — we'll review it shortly. You can continue to payment now.</p>
+                    {guestKyc.status === 'PENDING' ? (
+                      <p style={{ fontSize: 13, color: '#374151', margin: 0 }}>Submitted — we'll review it shortly.</p>
                     ) : (
                       <form onSubmit={handleSubmitKyc}>
                         <div className="form-group">
