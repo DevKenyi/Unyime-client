@@ -7,6 +7,7 @@ import { formatMoney } from '../utils/currency'
 import { formatCountdown, useCountdown } from '../hooks/useCountdown'
 import DateRangeCalendar from '../components/DateRangeCalendar'
 import PlaceholderImage from '../components/landing/PlaceholderImage'
+import TermsContent, { TERMS_VERSION } from '../components/TermsContent'
 import {
   getLatestValidCheckout,
   isRangeAvailable,
@@ -56,6 +57,7 @@ export default function BookingPage() {
 
   const [reserving, setReserving] = useState(false)
   const [reserveError, setReserveError] = useState('')
+  const [termsAccepted, setTermsAccepted] = useState(false)
   const [payingAgain, setPayingAgain] = useState(false)
   const [payError, setPayError] = useState('')
   const [payReason, setPayReason] = useState('')
@@ -148,6 +150,10 @@ export default function BookingPage() {
         checkOutDate,
         guestCount,
       })
+      // Records the acceptance the guest already gave by checking the box below — a real
+      // backend record (see PaymentService's payment gate), not just client-side state, but no
+      // login or extra page needed since it's tied to the booking itself.
+      await api.post(`/api/public/bookings/${booking.bookingId}/accept-terms`)
       setCreatedBooking({ bookingId: booking.bookingId, expiresAt: '' })
       setStep('payment')
       await initiatePayment(booking.bookingId)
@@ -377,6 +383,18 @@ export default function BookingPage() {
                   </div>
                 </div>
 
+                <p style={{ fontSize: 12.5, fontWeight: 700, color: '#111827', margin: '0 0 6px' }}>Terms & Conditions (v{TERMS_VERSION})</p>
+                <div
+                  className="surface-muted"
+                  style={{ padding: 14, maxHeight: 160, overflowY: 'auto', fontSize: 12.5, marginBottom: 10 }}
+                >
+                  <TermsContent />
+                </div>
+                <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 13, color: '#374151', marginBottom: 4 }}>
+                  <input type="checkbox" checked={termsAccepted} onChange={e => setTermsAccepted(e.target.checked)} style={{ marginTop: 2 }} />
+                  I have read and agree to Unyimi's Terms & Conditions.
+                </label>
+
                 {reserveError && (
                   <div style={{ background: '#FEF2F2', border: '1px solid #FCA5A5', borderRadius: 10, padding: '10px 14px', color: '#991B1B', fontSize: 13, marginTop: 12 }}>
                     {reserveError}
@@ -385,7 +403,7 @@ export default function BookingPage() {
 
                 <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
                   <button type="button" className="btn btn-secondary btn-lg" onClick={() => setStep('guests')} disabled={reserving}>← Back</button>
-                  <button type="button" className="btn btn-primary btn-lg" style={{ flex: 1 }} onClick={handleReserve} disabled={reserving}>
+                  <button type="button" className="btn btn-primary btn-lg" style={{ flex: 1 }} onClick={handleReserve} disabled={reserving || !termsAccepted}>
                     {reserving ? <><span className="spinner" /> Reserving…</> : 'Reserve & continue to payment →'}
                   </button>
                 </div>
@@ -410,12 +428,15 @@ export default function BookingPage() {
                         </span>
                       </div>
                       <p style={{ fontSize: 12.5, color: '#92400E', margin: '0 0 12px' }}>{payError}</p>
-                      {(payReason === 'GUEST_KYC_REQUIRED' || payReason === 'GUEST_TERMS_REQUIRED') && (
-                        <p style={{ fontSize: 12.5, color: '#92400E', margin: '0 0 12px' }}>
-                          Check your email for a sign-in link from your reservation confirmation, then{' '}
-                          <a href="/guest/verify" style={{ color: '#92400E', fontWeight: 700 }}>complete verification here</a>{' '}
-                          before trying payment again.
-                        </p>
+                      {payReason === 'GUEST_TERMS_REQUIRED' && createdBooking && (
+                        <button
+                          className="btn btn-secondary btn-md"
+                          style={{ marginBottom: 12 }}
+                          onClick={() => api.post(`/api/public/bookings/${createdBooking.bookingId}/accept-terms`)
+                            .then(() => initiatePayment(createdBooking.bookingId))}
+                        >
+                          Accept terms & retry
+                        </button>
                       )}
                       <button
                         className="btn btn-primary btn-md"

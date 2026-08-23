@@ -91,6 +91,12 @@ export default function BookingTrackerPage() {
     }
   }
 
+  const handleAcceptTermsAndRetry = async () => {
+    if (!bookingId) return
+    await api.post(`/api/public/bookings/${bookingId}/accept-terms`)
+    handlePayAgain()
+  }
+
   const handleConfirmCheckout = async () => {
     if (!bookingId) return
     setCheckingOut(true)
@@ -239,10 +245,10 @@ export default function BookingTrackerPage() {
                 Complete payment before the timer runs out to secure your stay — after that, these dates go back on the market.
               </p>
               {payError && <p style={{ color: '#DC2626', fontSize: 13, marginBottom: 10 }}>{payError}</p>}
-              {(payReason === 'GUEST_KYC_REQUIRED' || payReason === 'GUEST_TERMS_REQUIRED') && (
-                <p style={{ fontSize: 13, color: '#92400E', marginBottom: 10 }}>
-                  <Link to="/guest/verify" style={{ color: '#92400E', fontWeight: 700 }}>Complete identity verification</Link> before trying payment again.
-                </p>
+              {payReason === 'GUEST_TERMS_REQUIRED' && (
+                <button className="btn btn-secondary btn-md" style={{ marginBottom: 10 }} onClick={handleAcceptTermsAndRetry}>
+                  Accept Terms & Conditions and retry
+                </button>
               )}
               <button className="btn btn-primary btn-md" onClick={handlePayAgain} disabled={payingAgain}>
                 {payingAgain ? <span className="spinner" /> : 'Complete payment'}
