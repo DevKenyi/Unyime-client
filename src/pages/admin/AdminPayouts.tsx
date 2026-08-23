@@ -16,6 +16,22 @@ const STATUS_CFG: Record<PayoutStatus, { label: string; cls: string }> = {
   FAILED:     { label: 'Failed',           cls: 'status-cancelled' },
 }
 
+/** Explains a PENDING payout's "not yet eligible" status — otherwise there's no way to tell from
+ * the card alone whether it's waiting on the guest to check out or just sitting out the
+ * post-checkout protection window. */
+function pendingExplanation(p: AdminPayout): string | null {
+  if (p.payoutStatus !== 'PENDING') return null
+  if (p.bookingStatus !== 'CHECKED_OUT') return "Guest hasn't checked out yet"
+  if (!p.checkedOutAt) return 'Awaiting checkout confirmation'
+
+  const eligibleAt = new Date(p.checkedOutAt).getTime() + p.payoutDelayHours * 3600_000
+  const remainingMs = eligibleAt - Date.now()
+  if (remainingMs <= 0) return 'Protection window has passed — will pick up on the next eligibility check'
+
+  const hours = Math.ceil(remainingMs / 3600_000)
+  return `Checked out — eligible in ${hours < 24 ? `${hours}h` : `${Math.ceil(hours / 24)}d`}`
+}
+
 export default function AdminPayouts() {
   const [payouts, setPayouts] = useState<AdminPayout[]>([])
   const [loading, setLoading] = useState(true)
@@ -129,6 +145,10 @@ export default function AdminPayouts() {
                     <div><span style={{ color: '#9CA3AF' }}>Payment ref</span><br /><strong>{p.paymentReference ?? '—'}</strong></div>
                     {p.eligibleAt && <div><span style={{ color: '#9CA3AF' }}>Eligible since</span><br /><strong>{new Date(p.eligibleAt).toLocaleString()}</strong></div>}
                   </div>
+
+                  {pendingExplanation(p) && (
+                    <p style={{ fontSize: 12.5, color: '#9CA3AF', margin: '8px 0 0' }}>{pendingExplanation(p)}</p>
+                  )}
 
                   <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
                     {p.payoutStatus === 'ELIGIBLE' && (

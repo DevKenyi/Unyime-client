@@ -206,7 +206,9 @@ export interface AdminPayout {
   payoutStatus: PayoutStatus
   checkInDate: string | null
   checkOutDate: string | null
+  checkedOutAt: string | null
   eligibleAt: string | null
+  payoutDelayHours: number
   disputeStatus: DisputeStatus | null
   paymentReference: string | null
   flutterwaveTransferId: string | null
