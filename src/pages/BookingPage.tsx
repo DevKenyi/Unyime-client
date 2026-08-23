@@ -145,9 +145,11 @@ export default function BookingPage() {
     setStep('review')
   }
 
-  // Creates the booking (starting its 2-hour hold) and immediately tries to hand off to payment.
-  // Split from the payment-link step so a Flutterwave hiccup after the hold exists can retry
-  // without ever creating a second booking for the same dates.
+  // Creates the booking (starting its 2-hour hold) — payment is a separate, explicit step from
+  // here (see the "Continue to payment" button in the payment step) rather than an automatic
+  // redirect, so the guest actually lands on a screen first instead of being bounced straight to
+  // Flutterwave. That screen is also where the optional ID verification card lives — with an
+  // instant redirect there was never a moment for a guest to actually see or use it.
   const handleReserve = async () => {
     if (!slug || !checkInDate || !checkOutDate) return
     setReserveError('')
@@ -166,9 +168,9 @@ export default function BookingPage() {
       // backend record (see PaymentService's payment gate), not just client-side state, but no
       // login or extra page needed since it's tied to the booking itself.
       await api.post(`/api/public/bookings/${booking.bookingId}/accept-terms`)
-      setCreatedBooking({ bookingId: booking.bookingId, expiresAt: '' })
+      const { data: fresh } = await api.get<{ expiresAt: string }>(`/api/public/bookings/${booking.bookingId}`)
+      setCreatedBooking({ bookingId: booking.bookingId, expiresAt: fresh.expiresAt })
       setStep('payment')
-      await initiatePayment(booking.bookingId)
     } catch (err: any) {
       if (err.response?.status === 409) {
         // Someone else grabbed (part of) this range between when we loaded availability and now
@@ -470,41 +472,57 @@ export default function BookingPage() {
             {step === 'payment' && (
               <>
                 <div style={{ textAlign: 'center', padding: '20px 0' }}>
-                  {!payError ? (
+                  {payingAgain ? (
                     <>
                       <span className="spinner spinner-dark" style={{ marginBottom: 16 }} />
                       <h2 style={{ fontSize: 17, fontWeight: 700, color: '#111827', margin: '0 0 6px' }}>Taking you to secure payment…</h2>
                       <p style={{ fontSize: 13.5, color: '#6B7280', margin: 0 }}>Your dates are held — don't close this tab.</p>
                     </>
-                  ) : (
-                    <>
-                      <div style={{ background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: 10, padding: 16, textAlign: 'left' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                          <Clock size={16} color="#92400E" />
-                          <span style={{ fontSize: 13.5, fontWeight: 700, color: '#92400E' }}>
-                            {createdBooking?.expiresAt ? `Your reservation is held for ${formatCountdown(remainingMs)}` : 'Your reservation is held'}
-                          </span>
-                        </div>
-                        <p style={{ fontSize: 12.5, color: '#92400E', margin: '0 0 12px' }}>{payError}</p>
-                        {payReason === 'GUEST_TERMS_REQUIRED' && createdBooking && (
-                          <button
-                            className="btn btn-secondary btn-md"
-                            style={{ marginBottom: 12 }}
-                            onClick={() => api.post(`/api/public/bookings/${createdBooking.bookingId}/accept-terms`)
-                              .then(() => initiatePayment(createdBooking.bookingId))}
-                          >
-                            Accept terms & retry
-                          </button>
-                        )}
-                        <button
-                          className="btn btn-primary btn-md"
-                          onClick={() => createdBooking && initiatePayment(createdBooking.bookingId)}
-                          disabled={payingAgain}
-                        >
-                          {payingAgain ? <span className="spinner" /> : 'Try payment again'}
-                        </button>
+                  ) : payError ? (
+                    <div style={{ background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: 10, padding: 16, textAlign: 'left' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                        <Clock size={16} color="#92400E" />
+                        <span style={{ fontSize: 13.5, fontWeight: 700, color: '#92400E' }}>
+                          {createdBooking?.expiresAt ? `Your reservation is held for ${formatCountdown(remainingMs)}` : 'Your reservation is held'}
+                        </span>
                       </div>
-                    </>
+                      <p style={{ fontSize: 12.5, color: '#92400E', margin: '0 0 12px' }}>{payError}</p>
+                      {payReason === 'GUEST_TERMS_REQUIRED' && createdBooking && (
+                        <button
+                          className="btn btn-secondary btn-md"
+                          style={{ marginBottom: 12 }}
+                          onClick={() => api.post(`/api/public/bookings/${createdBooking.bookingId}/accept-terms`)
+                            .then(() => initiatePayment(createdBooking.bookingId))}
+                        >
+                          Accept terms & retry
+                        </button>
+                      )}
+                      <button
+                        className="btn btn-primary btn-md"
+                        onClick={() => createdBooking && initiatePayment(createdBooking.bookingId)}
+                        disabled={payingAgain}
+                      >
+                        {payingAgain ? <span className="spinner" /> : 'Try payment again'}
+                      </button>
+                    </div>
+                  ) : (
+                    <div style={{ background: '#ECFDF5', border: '1px solid #A7F3D0', borderRadius: 10, padding: 16, textAlign: 'left' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                        <Check size={16} color="#065F46" />
+                        <span style={{ fontSize: 13.5, fontWeight: 700, color: '#065F46' }}>
+                          {createdBooking?.expiresAt ? `Reservation held for ${formatCountdown(remainingMs)}` : 'Reservation held'}
+                        </span>
+                      </div>
+                      <p style={{ fontSize: 12.5, color: '#065F46', margin: '0 0 12px' }}>
+                        You're ready to pay — verify your identity below first if you'd like, or continue straight to payment.
+                      </p>
+                      <button
+                        className="btn btn-primary btn-md"
+                        onClick={() => createdBooking && initiatePayment(createdBooking.bookingId)}
+                      >
+                        Continue to payment →
+                      </button>
+                    </div>
                   )}
                 </div>
 
