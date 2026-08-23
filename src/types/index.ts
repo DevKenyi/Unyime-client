@@ -116,6 +116,10 @@ export interface Booking {
   guestTermsVersionAccepted: string | null
   hostTermsAcceptedAt: string | null
   guestTermsAcceptedAt: string | null
+  disputeStatus: DisputeStatus
+  disputeReason: string | null
+  disputeOpenedAt: string | null
+  disputeResolvedAt: string | null
 }
 
 export interface CreateBookingResult {
@@ -158,14 +162,55 @@ export interface EarningsTransaction {
   date: string
 }
 
-export type PayoutStatus = 'PENDING' | 'PAID'
+export type PayoutStatus =
+  | 'PENDING'
+  | 'ELIGIBLE'
+  | 'PROCESSING'
+  | 'PAID'
+  | 'ON_HOLD'
+  | 'DISPUTED'
+  | 'REFUNDED'
+  | 'CANCELLED'
+  | 'FAILED'
 
 export interface Payout {
   id: string
+  bookingId: string | null
+  propertyTitle: string | null
   amount: number
+  currency: string
   status: PayoutStatus
   requestedAt: string
+  eligibleAt: string | null
+  processedAt: string | null
   paidAt: string | null
+  flutterwaveTransferId: string | null
+  flutterwaveReference: string | null
+  failureReason: string | null
+  holdReason: string | null
+}
+
+export type DisputeStatus = 'NONE' | 'OPEN' | 'RESOLVED'
+
+export interface AdminPayout {
+  payoutId: string
+  bookingId: string | null
+  propertyTitle: string | null
+  guestName: string | null
+  hostEmail: string
+  grossAmount: number | null
+  platformCommission: number | null
+  hostAmount: number
+  currency: string
+  bookingStatus: BookingStatus | null
+  payoutStatus: PayoutStatus
+  checkInDate: string | null
+  checkOutDate: string | null
+  eligibleAt: string | null
+  disputeStatus: DisputeStatus | null
+  paymentReference: string | null
+  flutterwaveTransferId: string | null
+  flutterwaveReference: string | null
 }
 
 // ── KYC ───────────────────────────────────────────────────────────────────
@@ -181,6 +226,9 @@ export interface KycStatusInfo {
   status: KycStatus
   submittedAt: string | null
   verifiedAt: string | null
+  bankCode: string | null
+  bankAccountNumber: string | null
+  bankAccountName: string | null
 }
 
 export interface GuestKycStatusInfo {

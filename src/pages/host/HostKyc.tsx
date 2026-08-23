@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
-import { ShieldCheck, Upload, X, FileText } from 'lucide-react'
+import { ShieldCheck, Upload, X, FileText, Banknote } from 'lucide-react'
 import DashboardLayout from '../../components/DashboardLayout'
 import api from '../../api/axios'
 import { uploadImage } from '../../utils/cloudinaryUpload'
@@ -32,6 +32,13 @@ export default function HostKyc() {
   const [accepting, setAccepting] = useState(false)
   const [termsError, setTermsError] = useState('')
 
+  const [bankCode, setBankCode] = useState('')
+  const [bankAccountNumber, setBankAccountNumber] = useState('')
+  const [bankAccountName, setBankAccountName] = useState('')
+  const [savingBank, setSavingBank] = useState(false)
+  const [bankError, setBankError] = useState('')
+  const [bankSaved, setBankSaved] = useState(false)
+
   useEffect(() => {
     Promise.all([
       api.get<KycStatusInfo>('/api/host/kyc'),
@@ -43,9 +50,28 @@ export default function HostKyc() {
         if (kycRes.data.legalName) setLegalName(kycRes.data.legalName)
         if (kycRes.data.idDocumentType) setIdDocumentType(kycRes.data.idDocumentType)
         if (kycRes.data.idDocumentUrl) setIdDocumentUrl(kycRes.data.idDocumentUrl)
+        if (kycRes.data.bankCode) setBankCode(kycRes.data.bankCode)
+        if (kycRes.data.bankAccountNumber) setBankAccountNumber(kycRes.data.bankAccountNumber)
+        if (kycRes.data.bankAccountName) setBankAccountName(kycRes.data.bankAccountName)
       })
       .finally(() => setLoading(false))
   }, [])
+
+  const handleSaveBankDetails = async (e: FormEvent) => {
+    e.preventDefault()
+    setSavingBank(true)
+    setBankError('')
+    setBankSaved(false)
+    try {
+      const { data } = await api.put<KycStatusInfo>('/api/host/bank-details', { bankCode, bankAccountNumber, bankAccountName })
+      setKyc(data)
+      setBankSaved(true)
+    } catch (err: any) {
+      setBankError(err.response?.data?.error ?? 'Could not save your bank details.')
+    } finally {
+      setSavingBank(false)
+    }
+  }
 
   const handleAcceptTerms = async () => {
     setAccepting(true)
@@ -221,6 +247,40 @@ export default function HostKyc() {
                   {accepting ? <span className="spinner" /> : 'Accept & continue'}
                 </button>
               </>
+            )}
+          </div>
+
+          <div className="surface-card" style={{ padding: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+              <Banknote size={16} color="#111827" />
+              <h2 style={{ fontSize: 15, fontWeight: 700, color: '#111827', margin: 0 }}>Payout bank details</h2>
+            </div>
+            <p style={{ fontSize: 13, color: '#6B7280', margin: '0 0 16px' }}>
+              Where your earnings are sent once a booking's protection window clears — set once, reused for every payout.
+            </p>
+
+            {status !== 'VERIFIED' && status !== 'PENDING' ? (
+              <p style={{ fontSize: 13.5, color: '#9CA3AF', margin: 0 }}>Submit identity verification above first.</p>
+            ) : (
+              <form onSubmit={handleSaveBankDetails}>
+                <div className="form-group">
+                  <label>Bank code</label>
+                  <input className="input" required value={bankCode} onChange={e => setBankCode(e.target.value)} placeholder="e.g. 044" />
+                </div>
+                <div className="form-group">
+                  <label>Account number</label>
+                  <input className="input" required value={bankAccountNumber} onChange={e => setBankAccountNumber(e.target.value)} />
+                </div>
+                <div className="form-group">
+                  <label>Account holder name</label>
+                  <input className="input" required value={bankAccountName} onChange={e => setBankAccountName(e.target.value)} placeholder="As it appears on the account" />
+                </div>
+                {bankError && <p style={{ color: '#DC2626', fontSize: 13, marginBottom: 12 }}>{bankError}</p>}
+                {bankSaved && <p style={{ color: '#065F46', fontSize: 13, marginBottom: 12 }}>Saved.</p>}
+                <button type="submit" className="btn btn-primary btn-md" disabled={savingBank}>
+                  {savingBank ? <span className="spinner" /> : 'Save bank details'}
+                </button>
+              </form>
             )}
           </div>
           </div>
