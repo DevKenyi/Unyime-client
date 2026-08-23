@@ -11,6 +11,8 @@ import PropertyDetailPage  from './pages/PropertyDetailPage'
 import BookingPage         from './pages/BookingPage'
 import BookingTrackerPage  from './pages/BookingTrackerPage'
 import GuestLoginPage      from './pages/GuestLoginPage'
+import GuestVerifyPage     from './pages/GuestVerifyPage'
+import TermsPage           from './pages/TermsPage'
 
 import HostDashboard       from './pages/host/HostDashboard'
 import HostProperties      from './pages/host/HostProperties'
@@ -24,6 +26,7 @@ import AdminDashboard      from './pages/admin/AdminDashboard'
 import AdminUsers          from './pages/admin/AdminUsers'
 import AdminProperties     from './pages/admin/AdminProperties'
 import AdminKyc            from './pages/admin/AdminKyc'
+import AdminGuestKyc       from './pages/admin/AdminGuestKyc'
 import AdminPayouts        from './pages/admin/AdminPayouts'
 import AdminBookings       from './pages/admin/AdminBookings'
 
@@ -42,6 +45,8 @@ export default function App() {
           <Route path="/properties/:slug/book" element={<BookingPage />} />
           <Route path="/booking/:bookingId/status" element={<BookingTrackerPage />} />
           <Route path="/guest/login" element={<GuestLoginPage />} />
+          <Route path="/guest/verify" element={<GuestVerifyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
 
           {/* Host dashboard */}
           <Route path="/host" element={<Navigate to="/host/dashboard" replace />} />
@@ -106,6 +111,11 @@ export default function App() {
           <Route path="/admin/kyc" element={
             <ProtectedRoute allowedRoles={['ADMIN']}>
               <AdminKyc />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/guest-kyc" element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <AdminGuestKyc />
             </ProtectedRoute>
           } />
           <Route path="/admin/payouts" element={

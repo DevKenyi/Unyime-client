@@ -22,7 +22,8 @@ const ADMIN_NAV: NavItem[] = [
   { label: 'Properties',  to: '/admin/properties', icon: <Home size={17} /> },
   { label: 'Bookings',    to: '/admin/bookings',   icon: <ClipboardList size={17} /> },
   { label: 'Users',       to: '/admin/users',      icon: <Users size={17} /> },
-  { label: 'Verification', to: '/admin/kyc',       icon: <ShieldCheck size={17} /> },
+  { label: 'Host verification', to: '/admin/kyc',        icon: <ShieldCheck size={17} /> },
+  { label: 'Guest verification', to: '/admin/guest-kyc', icon: <BadgeCheck size={17} /> },
   { label: 'Payouts',     to: '/admin/payouts',    icon: <Banknote size={17} /> },
 ]
 

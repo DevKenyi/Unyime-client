@@ -20,6 +20,7 @@ export default function BookingTrackerPage() {
 
   const [payingAgain, setPayingAgain] = useState(false)
   const [payError, setPayError] = useState('')
+  const [payReason, setPayReason] = useState('')
 
   const [checkingOut, setCheckingOut] = useState(false)
   const [checkoutError, setCheckoutError] = useState('')
@@ -79,11 +80,13 @@ export default function BookingTrackerPage() {
     if (!bookingId) return
     setPayingAgain(true)
     setPayError('')
+    setPayReason('')
     try {
       const { data } = await api.post<{ paymentLink: string }>('/api/payments/initiate', { bookingId })
       window.location.href = data.paymentLink
     } catch (err: any) {
       setPayError(err.response?.data?.error ?? 'Could not start payment — please try again.')
+      setPayReason(err.response?.data?.reason ?? '')
       setPayingAgain(false)
     }
   }
@@ -236,6 +239,11 @@ export default function BookingTrackerPage() {
                 Complete payment before the timer runs out to secure your stay — after that, these dates go back on the market.
               </p>
               {payError && <p style={{ color: '#DC2626', fontSize: 13, marginBottom: 10 }}>{payError}</p>}
+              {(payReason === 'GUEST_KYC_REQUIRED' || payReason === 'GUEST_TERMS_REQUIRED') && (
+                <p style={{ fontSize: 13, color: '#92400E', marginBottom: 10 }}>
+                  <Link to="/guest/verify" style={{ color: '#92400E', fontWeight: 700 }}>Complete identity verification</Link> before trying payment again.
+                </p>
+              )}
               <button className="btn btn-primary btn-md" onClick={handlePayAgain} disabled={payingAgain}>
                 {payingAgain ? <span className="spinner" /> : 'Complete payment'}
               </button>

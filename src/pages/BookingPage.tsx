@@ -58,6 +58,7 @@ export default function BookingPage() {
   const [reserveError, setReserveError] = useState('')
   const [payingAgain, setPayingAgain] = useState(false)
   const [payError, setPayError] = useState('')
+  const [payReason, setPayReason] = useState('')
 
   const fetchAvailability = useCallback(() => {
     if (!slug) return Promise.resolve()
@@ -170,6 +171,7 @@ export default function BookingPage() {
   const initiatePayment = async (bookingId: string) => {
     setPayingAgain(true)
     setPayError('')
+    setPayReason('')
     try {
       const { data: payment } = await api.post<{ paymentLink: string; reference: string }>(
         '/api/payments/initiate',
@@ -178,6 +180,7 @@ export default function BookingPage() {
       window.location.href = payment.paymentLink
     } catch (err: any) {
       setPayError(err.response?.data?.error ?? 'Could not start payment — please try again.')
+      setPayReason(err.response?.data?.reason ?? '')
       setPayingAgain(false)
       // Fetch the real expiry now that we know the hold exists but the redirect failed, so the
       // countdown shown while the guest retries is accurate rather than blank.
@@ -407,6 +410,13 @@ export default function BookingPage() {
                         </span>
                       </div>
                       <p style={{ fontSize: 12.5, color: '#92400E', margin: '0 0 12px' }}>{payError}</p>
+                      {(payReason === 'GUEST_KYC_REQUIRED' || payReason === 'GUEST_TERMS_REQUIRED') && (
+                        <p style={{ fontSize: 12.5, color: '#92400E', margin: '0 0 12px' }}>
+                          Check your email for a sign-in link from your reservation confirmation, then{' '}
+                          <a href="/guest/verify" style={{ color: '#92400E', fontWeight: 700 }}>complete verification here</a>{' '}
+                          before trying payment again.
+                        </p>
+                      )}
                       <button
                         className="btn btn-primary btn-md"
                         onClick={() => createdBooking && initiatePayment(createdBooking.bookingId)}

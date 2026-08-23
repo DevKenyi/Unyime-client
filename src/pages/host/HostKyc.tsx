@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { ShieldCheck, Upload, X } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { ShieldCheck, Upload, X, FileText } from 'lucide-react'
 import DashboardLayout from '../../components/DashboardLayout'
 import api from '../../api/axios'
 import { uploadImage } from '../../utils/cloudinaryUpload'
-import type { IdDocumentType, KycStatusInfo } from '../../types'
+import { TERMS_VERSION } from '../TermsPage'
+import type { IdDocumentType, KycStatusInfo, TermsStatus } from '../../types'
 
 const STATUS_COPY: Record<string, { label: string; cls: string }> = {
   UNVERIFIED: { label: 'Not submitted', cls: 'status-pending' },
@@ -14,6 +16,7 @@ const STATUS_COPY: Record<string, { label: string; cls: string }> = {
 
 export default function HostKyc() {
   const [kyc, setKyc] = useState<KycStatusInfo | null>(null)
+  const [terms, setTerms] = useState<TermsStatus | null>(null)
   const [loading, setLoading] = useState(true)
 
   const [legalName, setLegalName] = useState('')
@@ -25,16 +28,37 @@ export default function HostKyc() {
   const [success, setSuccess] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  const [acceptChecked, setAcceptChecked] = useState(false)
+  const [accepting, setAccepting] = useState(false)
+  const [termsError, setTermsError] = useState('')
+
   useEffect(() => {
-    api.get<KycStatusInfo>('/api/host/kyc')
-      .then(({ data }) => {
-        setKyc(data)
-        if (data.legalName) setLegalName(data.legalName)
-        if (data.idDocumentType) setIdDocumentType(data.idDocumentType)
-        if (data.idDocumentUrl) setIdDocumentUrl(data.idDocumentUrl)
+    Promise.all([
+      api.get<KycStatusInfo>('/api/host/kyc'),
+      api.get<TermsStatus>('/api/terms/status'),
+    ])
+      .then(([kycRes, termsRes]) => {
+        setKyc(kycRes.data)
+        setTerms(termsRes.data)
+        if (kycRes.data.legalName) setLegalName(kycRes.data.legalName)
+        if (kycRes.data.idDocumentType) setIdDocumentType(kycRes.data.idDocumentType)
+        if (kycRes.data.idDocumentUrl) setIdDocumentUrl(kycRes.data.idDocumentUrl)
       })
       .finally(() => setLoading(false))
   }, [])
+
+  const handleAcceptTerms = async () => {
+    setAccepting(true)
+    setTermsError('')
+    try {
+      const { data } = await api.post<TermsStatus>('/api/terms/accept')
+      setTerms(data)
+    } catch (err: any) {
+      setTermsError(err.response?.data?.error ?? 'Could not record your acceptance.')
+    } finally {
+      setAccepting(false)
+    }
+  }
 
   const handleFile = async (file: File | undefined) => {
     if (!file) return
@@ -75,14 +99,15 @@ export default function HostKyc() {
     <DashboardLayout>
       <div className="page-shell">
         <div className="page-header">
-          <h1 className="page-title">Identity verification</h1>
-          <p className="page-subtitle">Verified hosts can get their properties approved for public listing.</p>
+          <h1 className="page-title">Verification & compliance</h1>
+          <p className="page-subtitle">Verified, terms-accepted hosts can get their properties approved and their guests' payments confirmed.</p>
         </div>
 
         {loading ? (
           <div style={{ textAlign: 'center', padding: '60px 0' }}><span className="spinner spinner-dark" /></div>
         ) : (
-          <div className="surface-card" style={{ padding: 24, maxWidth: 520 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 520 }}>
+          <div className="surface-card" style={{ padding: 24 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
               <span className={`status-pill ${cfg.cls}`}><span className="status-dot" />{cfg.label}</span>
               {status === 'VERIFIED' && <ShieldCheck size={16} color="#095C46" />}
@@ -170,6 +195,34 @@ export default function HostKyc() {
                 )}
               </form>
             )}
+          </div>
+
+          <div className="surface-card" style={{ padding: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <h2 style={{ fontSize: 15, fontWeight: 700, color: '#111827', margin: 0 }}>Terms & Conditions</h2>
+              {terms?.accepted && <ShieldCheck size={16} color="#095C46" />}
+            </div>
+
+            {terms?.accepted ? (
+              <p style={{ fontSize: 14, color: '#374151', margin: 0 }}>
+                You accepted version {terms.currentVersion} on {terms.acceptedAt ? new Date(terms.acceptedAt).toLocaleDateString() : ''}.
+              </p>
+            ) : (
+              <>
+                <Link to="/terms" target="_blank" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13.5, color: '#095C46', textDecoration: 'none', fontWeight: 600, marginBottom: 12 }}>
+                  <FileText size={14} /> Read the Terms & Conditions (v{TERMS_VERSION})
+                </Link>
+                <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 13.5, color: '#374151', marginBottom: 14 }}>
+                  <input type="checkbox" checked={acceptChecked} onChange={e => setAcceptChecked(e.target.checked)} style={{ marginTop: 2 }} />
+                  I have read and agree to Unyimi's Terms & Conditions.
+                </label>
+                {termsError && <p style={{ color: '#DC2626', fontSize: 13, marginBottom: 12 }}>{termsError}</p>}
+                <button className="btn btn-primary btn-md" disabled={!acceptChecked || accepting} onClick={handleAcceptTerms}>
+                  {accepting ? <span className="spinner" /> : 'Accept & continue'}
+                </button>
+              </>
+            )}
+          </div>
           </div>
         )}
       </div>

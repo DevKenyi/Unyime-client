@@ -109,6 +109,13 @@ export interface Booking {
   refundedAt: string | null
   /** Only set while status is PENDING_PAYMENT — when the payment hold expires. */
   expiresAt: string | null
+  /** Compliance audit snapshot, captured at confirmation time — null until then. */
+  hostVerifiedAtBooking: boolean | null
+  guestVerifiedAtBooking: boolean | null
+  hostTermsVersionAccepted: string | null
+  guestTermsVersionAccepted: string | null
+  hostTermsAcceptedAt: string | null
+  guestTermsAcceptedAt: string | null
 }
 
 export interface CreateBookingResult {
@@ -174,6 +181,24 @@ export interface KycStatusInfo {
   status: KycStatus
   submittedAt: string | null
   verifiedAt: string | null
+}
+
+export interface GuestKycStatusInfo {
+  guestId: string
+  legalName: string | null
+  idDocumentType: IdDocumentType | null
+  idDocumentUrl: string | null
+  status: KycStatus
+  submittedAt: string | null
+  verifiedAt: string | null
+}
+
+// ── Terms & Conditions ──────────────────────────────────────────────────────
+
+export interface TermsStatus {
+  currentVersion: string
+  accepted: boolean
+  acceptedAt: string | null
 }
 
 // ── Admin ─────────────────────────────────────────────────────────────────
