@@ -34,6 +34,9 @@ export default function BookingTrackerPage() {
   const [kycError, setKycError] = useState('')
   const kycFileInputRef = useRef<HTMLInputElement>(null)
 
+  const [checkingIn, setCheckingIn] = useState(false)
+  const [checkInError, setCheckInError] = useState('')
+
   const [checkingOut, setCheckingOut] = useState(false)
   const [checkoutError, setCheckoutError] = useState('')
 
@@ -177,6 +180,20 @@ export default function BookingTrackerPage() {
     if (!bookingId) return
     await api.post(`/api/public/bookings/${bookingId}/accept-terms`)
     handlePayAgain()
+  }
+
+  const handleConfirmCheckIn = async () => {
+    if (!bookingId || !confirm('Do you want to check in now?')) return
+    setCheckingIn(true)
+    setCheckInError('')
+    try {
+      const { data } = await api.post<Booking>(`/api/public/bookings/${bookingId}/checkin`)
+      setBooking(data)
+    } catch (err: any) {
+      setCheckInError(err.response?.data?.error ?? 'Could not confirm check-in.')
+    } finally {
+      setCheckingIn(false)
+    }
   }
 
   const handleConfirmCheckout = async () => {
@@ -434,6 +451,22 @@ export default function BookingTrackerPage() {
                 The payment window closed before payment was completed. These dates have been released and may no longer be available — you'll need to make a new booking.
               </p>
               <Link to="/properties" className="btn btn-secondary btn-md">Search for available dates</Link>
+            </div>
+          )}
+
+          {booking.status === 'CONFIRMED' && (
+            <div style={{ background: '#EDE9FE', border: '1px solid #C4B5FD', borderRadius: 10, padding: '14px', marginTop: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                <DoorOpen size={16} color="#5B21B6" />
+                <span style={{ fontSize: 13.5, fontWeight: 700, color: '#5B21B6' }}>Arrived at the property?</span>
+              </div>
+              <p style={{ fontSize: 12.5, color: '#5B21B6', margin: '0 0 12px' }}>
+                Check in once you've arrived so the host knows your stay has started.
+              </p>
+              {checkInError && <p style={{ color: '#DC2626', fontSize: 13, marginBottom: 10 }}>{checkInError}</p>}
+              <button className="btn btn-primary btn-md" onClick={handleConfirmCheckIn} disabled={checkingIn}>
+                {checkingIn ? <span className="spinner" /> : 'Check in'}
+              </button>
             </div>
           )}
 
