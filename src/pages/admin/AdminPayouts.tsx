@@ -186,6 +186,9 @@ export default function AdminPayouts() {
                   {pendingExplanation(p) && (
                     <p style={{ fontSize: 12.5, color: '#9CA3AF', margin: '8px 0 0' }}>{pendingExplanation(p)}</p>
                   )}
+                  {p.payoutStatus === 'FAILED' && p.failureReason && (
+                    <p style={{ fontSize: 12.5, color: '#DC2626', margin: '8px 0 0' }}>Transfer failed: {p.failureReason}</p>
+                  )}
 
                   <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
                     {p.payoutStatus === 'ELIGIBLE' && (
@@ -195,8 +198,20 @@ export default function AdminPayouts() {
                       </button>
                     )}
                     {p.payoutStatus === 'PROCESSING' && (
-                      <button className="btn btn-secondary btn-sm" onClick={() => toggleExpand(p.payoutId)}>
-                        Mark paid
+                      <>
+                        <button className="btn btn-primary btn-sm" disabled={busyId === p.payoutId}
+                          onClick={() => runAction(p.payoutId, () => api.patch(`/api/admin/payouts/${p.payoutId}/check-transfer-status`))}>
+                          Check transfer status
+                        </button>
+                        <button className="btn btn-secondary btn-sm" onClick={() => toggleExpand(p.payoutId)}>
+                          Mark paid manually
+                        </button>
+                      </>
+                    )}
+                    {p.payoutStatus === 'FAILED' && (
+                      <button className="btn btn-primary btn-sm" disabled={busyId === p.payoutId}
+                        onClick={() => runAction(p.payoutId, () => api.patch(`/api/admin/payouts/${p.payoutId}/retry`))}>
+                        Retry
                       </button>
                     )}
                     {(p.payoutStatus === 'PENDING' || p.payoutStatus === 'ELIGIBLE') && (

@@ -215,6 +215,7 @@ export interface AdminPayout {
   paymentReference: string | null
   flutterwaveTransferId: string | null
   flutterwaveReference: string | null
+  failureReason: string | null
 }
 
 // ── KYC ───────────────────────────────────────────────────────────────────
@@ -230,9 +231,16 @@ export interface KycStatusInfo {
   status: KycStatus
   submittedAt: string | null
   verifiedAt: string | null
+  bankCountry: Country | null
+  bankCode: string | null
   bankName: string | null
   bankAccountNumber: string | null
   bankAccountName: string | null
+}
+
+export interface BankOption {
+  code: string
+  name: string
 }
 
 export interface GuestKycStatusInfo {

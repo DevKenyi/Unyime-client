@@ -5,7 +5,7 @@ import DashboardLayout from '../../components/DashboardLayout'
 import api from '../../api/axios'
 import { uploadImage } from '../../utils/cloudinaryUpload'
 import { TERMS_VERSION } from '../TermsPage'
-import type { IdDocumentType, KycStatusInfo, TermsStatus } from '../../types'
+import type { BankOption, Country, IdDocumentType, KycStatusInfo, TermsStatus } from '../../types'
 
 const STATUS_COPY: Record<string, { label: string; cls: string }> = {
   UNVERIFIED: { label: 'Not submitted', cls: 'status-pending' },
@@ -32,7 +32,10 @@ export default function HostKyc() {
   const [accepting, setAccepting] = useState(false)
   const [termsError, setTermsError] = useState('')
 
-  const [bankName, setBankName] = useState('')
+  const [bankCountry, setBankCountry] = useState<Country>('NIGERIA')
+  const [bankCode, setBankCode] = useState('')
+  const [bankOptions, setBankOptions] = useState<BankOption[]>([])
+  const [loadingBanks, setLoadingBanks] = useState(false)
   const [bankAccountNumber, setBankAccountNumber] = useState('')
   const [bankAccountName, setBankAccountName] = useState('')
   const [savingBank, setSavingBank] = useState(false)
@@ -50,20 +53,34 @@ export default function HostKyc() {
         if (kycRes.data.legalName) setLegalName(kycRes.data.legalName)
         if (kycRes.data.idDocumentType) setIdDocumentType(kycRes.data.idDocumentType)
         if (kycRes.data.idDocumentUrl) setIdDocumentUrl(kycRes.data.idDocumentUrl)
-        if (kycRes.data.bankName) setBankName(kycRes.data.bankName)
+        if (kycRes.data.bankCountry) setBankCountry(kycRes.data.bankCountry)
+        if (kycRes.data.bankCode) setBankCode(kycRes.data.bankCode)
         if (kycRes.data.bankAccountNumber) setBankAccountNumber(kycRes.data.bankAccountNumber)
         if (kycRes.data.bankAccountName) setBankAccountName(kycRes.data.bankAccountName)
       })
       .finally(() => setLoading(false))
   }, [])
 
+  // Refetches whenever the host switches country — the bank list (and which code is valid) is
+  // entirely country-specific, so a previously-selected bank from another country can't survive.
+  useEffect(() => {
+    setLoadingBanks(true)
+    api.get<BankOption[]>('/api/host/banks', { params: { country: bankCountry } })
+      .then(({ data }) => setBankOptions(data))
+      .catch(() => setBankOptions([]))
+      .finally(() => setLoadingBanks(false))
+  }, [bankCountry])
+
   const handleSaveBankDetails = async (e: FormEvent) => {
     e.preventDefault()
     setSavingBank(true)
     setBankError('')
     setBankSaved(false)
+    const selectedBank = bankOptions.find(b => b.code === bankCode)
     try {
-      const { data } = await api.put<KycStatusInfo>('/api/host/bank-details', { bankName, bankAccountNumber, bankAccountName })
+      const { data } = await api.put<KycStatusInfo>('/api/host/bank-details', {
+        bankCountry, bankCode, bankName: selectedBank?.name ?? '', bankAccountNumber, bankAccountName,
+      })
       setKyc(data)
       setBankSaved(true)
     } catch (err: any) {
@@ -264,8 +281,18 @@ export default function HostKyc() {
             ) : (
               <form onSubmit={handleSaveBankDetails}>
                 <div className="form-group">
-                  <label>Bank name</label>
-                  <input className="input" required value={bankName} onChange={e => setBankName(e.target.value)} placeholder="e.g. GTBank" />
+                  <label>Country</label>
+                  <select className="input" value={bankCountry} onChange={e => { setBankCountry(e.target.value as Country); setBankCode('') }}>
+                    <option value="NIGERIA">Nigeria</option>
+                    <option value="SOUTH_AFRICA">South Africa</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Bank</label>
+                  <select className="input" required value={bankCode} onChange={e => setBankCode(e.target.value)} disabled={loadingBanks}>
+                    <option value="">{loadingBanks ? 'Loading banks…' : '— Select your bank —'}</option>
+                    {bankOptions.map(b => <option key={b.code} value={b.code}>{b.name}</option>)}
+                  </select>
                 </div>
                 <div className="form-group">
                   <label>Account number</label>
