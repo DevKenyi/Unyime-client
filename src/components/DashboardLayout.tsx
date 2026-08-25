@@ -5,6 +5,7 @@ import {
   LayoutDashboard, ClipboardList, Home, Wallet,
   Users, ShieldCheck, Banknote, LogOut, Menu, X, BadgeCheck, Sparkles,
 } from 'lucide-react'
+import NotificationBell from './NotificationBell'
 
 interface NavItem { label: string; to: string; icon: ReactNode }
 
@@ -157,8 +158,11 @@ export default function DashboardLayout({ children }: Props) {
           >
             <Menu size={20} />
           </button>
-          <div style={{ fontSize: 13, color: '#6B7280' }}>
-            {new Date().toLocaleDateString('en-NG', { weekday: 'long', day: 'numeric', month: 'long' })}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <div style={{ fontSize: 13, color: '#6B7280' }}>
+              {new Date().toLocaleDateString('en-NG', { weekday: 'long', day: 'numeric', month: 'long' })}
+            </div>
+            <NotificationBell />
           </div>
         </header>
 

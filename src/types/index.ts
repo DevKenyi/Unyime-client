@@ -254,6 +254,32 @@ export interface GuestKycStatusInfo {
   verifiedAt: string | null
 }
 
+// ── Notifications ────────────────────────────────────────────────────────
+
+export type NotificationType =
+  | 'NEW_BOOKING'
+  | 'GUEST_CHECKED_IN'
+  | 'GUEST_CHECKED_OUT'
+  | 'PAYOUT_ELIGIBLE'
+  | 'PAYOUT_PAID'
+  | 'KYC_APPROVED'
+  | 'KYC_REJECTED'
+  | 'PROPERTY_PENDING_REVIEW'
+  | 'HOST_KYC_PENDING'
+  | 'TRANSFER_FAILED'
+  | 'UNVERIFIED_PAYOUT_ESCALATED'
+  | 'DISPUTE_OPENED'
+
+export interface Notification {
+  id: string
+  type: NotificationType
+  title: string
+  message: string | null
+  link: string | null
+  read: boolean
+  createdAt: string
+}
+
 // ── Terms & Conditions ──────────────────────────────────────────────────────
 
 export interface TermsStatus {
