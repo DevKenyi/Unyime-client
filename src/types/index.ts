@@ -216,6 +216,7 @@ export interface AdminPayout {
   flutterwaveTransferId: string | null
   flutterwaveReference: string | null
   failureReason: string | null
+  paymentVerified: boolean
 }
 
 // ── KYC ───────────────────────────────────────────────────────────────────

@@ -43,6 +43,9 @@ export default function AdminPayouts() {
   const [checking, setChecking] = useState(false)
   const [checkResult, setCheckResult] = useState<string | null>(null)
 
+  const [escalatingId, setEscalatingId] = useState<string | null>(null)
+  const [escalateReason, setEscalateReason] = useState('')
+
   const [delayHours, setDelayHours] = useState('')
   const [savingDelay, setSavingDelay] = useState(false)
   const [delayError, setDelayError] = useState('')
@@ -169,11 +172,19 @@ export default function AdminPayouts() {
                       {p.disputeStatus === 'OPEN' && (
                         <span className="status-pill status-cancelled"><span className="status-dot" />Dispute open</span>
                       )}
+                      {!p.paymentVerified && p.payoutStatus !== 'PAID' && (
+                        <span className="status-pill status-cancelled"><span className="status-dot" />Not Flutterwave-verified</span>
+                      )}
                       <span className={`status-pill ${STATUS_CFG[p.payoutStatus].cls}`}>
                         <span className="status-dot" />{STATUS_CFG[p.payoutStatus].label}
                       </span>
                     </div>
                   </div>
+                  {!p.paymentVerified && (
+                    <p style={{ fontSize: 12, color: '#DC2626', margin: '8px 0 0' }}>
+                      This booking's payment was admin-confirmed, not verified by Flutterwave — real transfer release is blocked.
+                    </p>
+                  )}
 
                   <div className="surface-muted" style={{ padding: 12, marginTop: 12, display: 'flex', gap: 24, flexWrap: 'wrap', fontSize: 13 }}>
                     <div><span style={{ color: '#9CA3AF' }}>Gross</span><br /><strong>{p.grossAmount != null ? formatMoney(p.grossAmount, p.currency) : '—'}</strong></div>
@@ -191,10 +202,16 @@ export default function AdminPayouts() {
                   )}
 
                   <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
-                    {p.payoutStatus === 'ELIGIBLE' && (
+                    {p.payoutStatus === 'ELIGIBLE' && p.paymentVerified && (
                       <button className="btn btn-primary btn-sm" disabled={busyId === p.payoutId}
                         onClick={() => runAction(p.payoutId, () => api.patch(`/api/admin/payouts/${p.payoutId}/mark-processing`))}>
                         Start release
+                      </button>
+                    )}
+                    {p.payoutStatus === 'ELIGIBLE' && !p.paymentVerified && (
+                      <button className="btn btn-danger btn-sm"
+                        onClick={() => { setEscalatingId(escalatingId === p.payoutId ? null : p.payoutId); setEscalateReason(''); setActionError('') }}>
+                        Escalate for manual payout review
                       </button>
                     )}
                     {p.payoutStatus === 'PROCESSING' && (
@@ -270,6 +287,37 @@ export default function AdminPayouts() {
                           </button>
                         </div>
                       )}
+                      {actionError && <p style={{ color: '#DC2626', fontSize: 13, marginTop: 8 }}>{actionError}</p>}
+                    </div>
+                  )}
+
+                  {escalatingId === p.payoutId && (
+                    <div className="surface-muted" style={{ padding: 14, marginTop: 12, border: '1px solid #FCA5A5' }}>
+                      <p style={{ fontSize: 12.5, color: '#991B1B', margin: '0 0 8px' }}>
+                        This releases {formatMoney(p.hostAmount, p.currency)} to the host without a real Flutterwave
+                        transfer — only use this if you've independently confirmed the host should actually be paid
+                        (e.g. a genuine bank transfer done outside the app). This is logged against your account.
+                      </p>
+                      <div className="form-group">
+                        <label>Reason (required)</label>
+                        <input className="input" value={escalateReason} onChange={e => setEscalateReason(e.target.value)} placeholder="e.g. confirmed real bank transfer with host directly" />
+                        <button className="btn btn-danger btn-sm" style={{ marginTop: 8 }} disabled={!escalateReason.trim() || busyId === p.payoutId}
+                          onClick={async () => {
+                            setBusyId(p.payoutId)
+                            setActionError('')
+                            try {
+                              await api.patch(`/api/admin/payouts/${p.payoutId}/escalate-unverified`, { reason: escalateReason })
+                              setEscalatingId(null)
+                              load()
+                            } catch (err: any) {
+                              setActionError(err.response?.data?.error ?? 'Could not complete this action.')
+                            } finally {
+                              setBusyId(null)
+                            }
+                          }}>
+                          Confirm — release without a real transfer
+                        </button>
+                      </div>
                       {actionError && <p style={{ color: '#DC2626', fontSize: 13, marginTop: 8 }}>{actionError}</p>}
                     </div>
                   )}
