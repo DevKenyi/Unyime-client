@@ -43,6 +43,11 @@ export default function AdminPayouts() {
   const [checking, setChecking] = useState(false)
   const [checkResult, setCheckResult] = useState<string | null>(null)
 
+  const [delayHours, setDelayHours] = useState('')
+  const [savingDelay, setSavingDelay] = useState(false)
+  const [delayError, setDelayError] = useState('')
+  const [delaySaved, setDelaySaved] = useState(false)
+
   const load = () => {
     setLoading(true)
     api.get<AdminPayout[]>('/api/admin/payouts')
@@ -51,6 +56,26 @@ export default function AdminPayouts() {
   }
 
   useEffect(load, [])
+
+  useEffect(() => {
+    api.get<number>('/api/admin/payouts/delay-hours').then(({ data }) => setDelayHours(String(data)))
+  }, [])
+
+  const saveDelayHours = async () => {
+    setSavingDelay(true)
+    setDelayError('')
+    setDelaySaved(false)
+    try {
+      const { data } = await api.put<number>('/api/admin/payouts/delay-hours', { payoutDelayHours: Number(delayHours) })
+      setDelayHours(String(data))
+      setDelaySaved(true)
+      load()
+    } catch (err: any) {
+      setDelayError(err.response?.data?.error ?? 'Could not save.')
+    } finally {
+      setSavingDelay(false)
+    }
+  }
 
   const toggleExpand = (payoutId: string) => {
     setExpandedId(expandedId === payoutId ? null : payoutId)
@@ -98,6 +123,18 @@ export default function AdminPayouts() {
             </p>
           </div>
           <div style={{ textAlign: 'right' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-end', marginBottom: 8 }}>
+              <label style={{ fontSize: 12.5, color: '#6B7280' }}>Protection window (hours after check-in)</label>
+              <input
+                className="input" type="number" min={0} style={{ width: 72, padding: '6px 10px' }}
+                value={delayHours} onChange={e => { setDelayHours(e.target.value); setDelaySaved(false) }}
+              />
+              <button className="btn btn-secondary btn-sm" onClick={saveDelayHours} disabled={savingDelay || delayHours === ''}>
+                {savingDelay ? <span className="spinner" /> : 'Save'}
+              </button>
+            </div>
+            {delayError && <p style={{ fontSize: 12.5, color: '#DC2626', margin: '0 0 8px' }}>{delayError}</p>}
+            {delaySaved && <p style={{ fontSize: 12.5, color: '#065F46', margin: '0 0 8px' }}>Saved — applies immediately, no redeploy needed.</p>}
             <button className="btn btn-secondary btn-sm" disabled={checking} onClick={runEligibilityCheck}>
               {checking ? 'Checking…' : 'Run eligibility check now'}
             </button>
