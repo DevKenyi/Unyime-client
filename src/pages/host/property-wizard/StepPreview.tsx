@@ -8,16 +8,18 @@ interface Props {
   error: string
   onEdit: () => void
   onSubmit: () => void
+  subtitle?: string
+  submitLabel?: string
 }
 
-export default function StepPreview({ state, isEdit, saving, error, onEdit, onSubmit }: Props) {
+export default function StepPreview({ state, isEdit, saving, error, onEdit, onSubmit, subtitle, submitLabel }: Props) {
   return (
     <div>
       <h2 style={{ fontSize: 17, fontWeight: 700, color: '#111827', margin: '0 0 4px' }}>This is what guests will see</h2>
       <p style={{ fontSize: 13.5, color: '#6B7280', margin: '0 0 20px' }}>
-        {isEdit
+        {subtitle ?? (isEdit
           ? 'Review your changes before saving.'
-          : "New listings need admin approval before they appear in search — we'll notify you once it's live."}
+          : "New listings need admin approval before they appear in search — we'll notify you once it's live.")}
       </p>
 
       <div style={{ maxWidth: 360 }}>
@@ -49,7 +51,7 @@ export default function StepPreview({ state, isEdit, saving, error, onEdit, onSu
           ← Edit listing
         </button>
         <button type="button" className="btn btn-primary btn-md" onClick={onSubmit} disabled={saving}>
-          {saving ? <span className="spinner" /> : isEdit ? 'Save changes' : 'Submit for approval →'}
+          {saving ? <span className="spinner" /> : submitLabel ?? (isEdit ? 'Save changes' : 'Submit for approval →')}
         </button>
       </div>
     </div>

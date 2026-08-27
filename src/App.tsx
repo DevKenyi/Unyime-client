@@ -25,6 +25,7 @@ import HostKyc              from './pages/host/HostKyc'
 import AdminDashboard      from './pages/admin/AdminDashboard'
 import AdminUsers          from './pages/admin/AdminUsers'
 import AdminProperties     from './pages/admin/AdminProperties'
+import AdminPropertyForm   from './pages/admin/AdminPropertyForm'
 import AdminKyc            from './pages/admin/AdminKyc'
 import AdminGuestKyc       from './pages/admin/AdminGuestKyc'
 import AdminPayouts        from './pages/admin/AdminPayouts'
@@ -106,6 +107,11 @@ export default function App() {
           <Route path="/admin/properties" element={
             <ProtectedRoute allowedRoles={['ADMIN']}>
               <AdminProperties />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/properties/new" element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <AdminPropertyForm />
             </ProtectedRoute>
           } />
           <Route path="/admin/kyc" element={

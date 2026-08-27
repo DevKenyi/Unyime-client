@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { MapPin } from 'lucide-react'
 import DashboardLayout from '../../components/DashboardLayout'
 import api from '../../api/axios'
@@ -57,9 +58,12 @@ export default function AdminProperties() {
   return (
     <DashboardLayout>
       <div className="page-shell">
-        <div className="page-header">
-          <h1 className="page-title">Properties</h1>
-          <p className="page-subtitle">Review new listings and manage all properties.</p>
+        <div className="page-header" style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <h1 className="page-title">Properties</h1>
+            <p className="page-subtitle">Review new listings and manage all properties.</p>
+          </div>
+          <Link to="/admin/properties/new" className="btn btn-primary btn-md">Add property</Link>
         </div>
 
         {loading && <div style={{ textAlign: 'center', padding: '60px 0' }}><span className="spinner spinner-dark" /></div>}
