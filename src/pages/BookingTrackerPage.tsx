@@ -460,13 +460,21 @@ export default function BookingTrackerPage() {
                 <DoorOpen size={16} color="#5B21B6" />
                 <span style={{ fontSize: 13.5, fontWeight: 700, color: '#5B21B6' }}>Arrived at the property?</span>
               </div>
-              <p style={{ fontSize: 12.5, color: '#5B21B6', margin: '0 0 12px' }}>
-                Check in once you've arrived so the host knows your stay has started.
-              </p>
-              {checkInError && <p style={{ color: '#DC2626', fontSize: 13, marginBottom: 10 }}>{checkInError}</p>}
-              <button className="btn btn-primary btn-md" onClick={handleConfirmCheckIn} disabled={checkingIn}>
-                {checkingIn ? <span className="spinner" /> : 'Check in'}
-              </button>
+              {new Date().toISOString().split('T')[0] < booking.checkInDate ? (
+                <p style={{ fontSize: 12.5, color: '#5B21B6', margin: 0 }}>
+                  Check-in opens on {new Date(`${booking.checkInDate}T00:00:00`).toLocaleDateString('en-NG', { month: 'short', day: 'numeric', year: 'numeric' })}.
+                </p>
+              ) : (
+                <>
+                  <p style={{ fontSize: 12.5, color: '#5B21B6', margin: '0 0 12px' }}>
+                    Check in once you've arrived so the host knows your stay has started.
+                  </p>
+                  {checkInError && <p style={{ color: '#DC2626', fontSize: 13, marginBottom: 10 }}>{checkInError}</p>}
+                  <button className="btn btn-primary btn-md" onClick={handleConfirmCheckIn} disabled={checkingIn}>
+                    {checkingIn ? <span className="spinner" /> : 'Check in'}
+                  </button>
+                </>
+              )}
             </div>
           )}
 
