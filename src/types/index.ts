@@ -268,6 +268,7 @@ export type NotificationType =
   | 'HOST_KYC_PENDING'
   | 'TRANSFER_FAILED'
   | 'UNVERIFIED_PAYOUT_ESCALATED'
+  | 'NEW_USER_REGISTERED'
   | 'DISPUTE_OPENED'
 
 export interface Notification {
