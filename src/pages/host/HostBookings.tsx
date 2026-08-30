@@ -20,6 +20,24 @@ function formatTime(iso: string) {
   return new Date(iso).toLocaleString('en-NG', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
 }
 
+function ordinal(n: number): string {
+  const v = n % 100
+  if (v >= 11 && v <= 13) return `${n}th`
+  switch (n % 10) {
+    case 1: return `${n}st`
+    case 2: return `${n}nd`
+    case 3: return `${n}rd`
+    default: return `${n}th`
+  }
+}
+
+/** "2026-08-30" → "30th Aug 2026" — parsed with an explicit local-midnight time so this never
+ * shifts a day in timezones behind UTC, which a bare `new Date("2026-08-30")` would do. */
+function formatDateNice(isoDate: string): string {
+  const d = new Date(`${isoDate}T00:00:00`)
+  return `${ordinal(d.getDate())} ${d.toLocaleDateString('en-NG', { month: 'short' })} ${d.getFullYear()}`
+}
+
 export default function HostBookings() {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [loading, setLoading] = useState(true)
@@ -76,7 +94,7 @@ export default function HostBookings() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 14, fontSize: 13, color: '#6B7280', flexWrap: 'wrap' }}>
                       <span>{b.guestName} · {b.guestPhone}{b.guestEmail ? ` · ${b.guestEmail}` : ''}</span>
                       <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <Calendar size={13} /> {b.checkInDate} → {b.checkOutDate}
+                        <Calendar size={13} /> {formatDateNice(b.checkInDate)} to {formatDateNice(b.checkOutDate)}
                       </span>
                       <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                         <Users size={13} /> {b.guestCount}

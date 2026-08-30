@@ -28,7 +28,10 @@ export default function Hero() {
         </div>
       </Reveal>
 
-      <Reveal delay={100}>
+      {/* position + z-index here so this stacking context (created by Reveal's own transform)
+          paints above the hero images' Reveal wrapper below it — otherwise the later sibling's
+          stacking context wins by DOM order regardless of the search popover's own z-index. */}
+      <Reveal delay={100} style={{ position: 'relative', zIndex: 10 }}>
         <div style={{ maxWidth: 900, margin: '0 auto' }}>
           <SearchBar />
         </div>
