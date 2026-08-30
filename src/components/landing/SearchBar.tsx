@@ -1,17 +1,20 @@
-import { useState, type FormEvent } from 'react'
+import { useState, type FormEvent, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
+import type { DateRange } from 'react-day-picker'
 import { MapPin, Calendar, Users, Search } from 'lucide-react'
+import DateRangeCalendar from '../DateRangeCalendar'
 
-function todayISO() {
-  return new Date().toISOString().split('T')[0]
+function formatNice(d: Date): string {
+  return d.toLocaleDateString('en-NG', { month: 'short', day: 'numeric' })
 }
 
 export default function SearchBar() {
   const navigate = useNavigate()
   const [where, setWhere] = useState('')
-  const [checkIn, setCheckIn] = useState('')
-  const [checkOut, setCheckOut] = useState('')
+  const [range, setRange] = useState<DateRange | undefined>(undefined)
   const [guests, setGuests] = useState('')
+  const [datesOpen, setDatesOpen] = useState(false)
+  const [guestsOpen, setGuestsOpen] = useState(false)
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
@@ -22,6 +25,9 @@ export default function SearchBar() {
     if (guests) params.guests = guests
     navigate(`/properties?${new URLSearchParams(params).toString()}`)
   }
+
+  const openDates = () => { setDatesOpen(o => !o); setGuestsOpen(false) }
+  const openGuests = () => { setGuestsOpen(o => !o); setDatesOpen(false) }
 
   return (
     <form
@@ -39,26 +45,67 @@ export default function SearchBar() {
         />
       </SearchField>
       <div className="search-divider" />
-      <SearchField icon={<Calendar size={16} />} label="Check in">
-        <input
-          className="search-field-input" type="date" min={todayISO()}
-          value={checkIn} onChange={e => setCheckIn(e.target.value)}
-        />
-      </SearchField>
+
+      <div style={{ position: 'relative', display: 'flex', flex: '2 1 0' }}>
+        <SearchField icon={<Calendar size={16} />} label="Check in">
+          <button type="button" className={`search-field-button${range?.from ? '' : ' is-placeholder'}`} onClick={openDates}>
+            {range?.from ? formatNice(range.from) : 'Add date'}
+          </button>
+        </SearchField>
+        <div className="search-divider" />
+        <SearchField icon={<Calendar size={16} />} label="Check out">
+          <button type="button" className={`search-field-button${range?.to ? '' : ' is-placeholder'}`} onClick={openDates}>
+            {range?.to ? formatNice(range.to) : 'Add date'}
+          </button>
+        </SearchField>
+
+        {datesOpen && (
+          <>
+            <div onClick={() => setDatesOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 40 }} />
+            <div className="search-popover dates">
+              <DateRangeCalendar selected={range} onSelect={setRange} unavailableRanges={[]} />
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 12 }}>
+                <button type="button" className="btn btn-secondary btn-sm" onClick={() => setRange(undefined)}>Clear</button>
+                <button type="button" className="btn btn-primary btn-sm" onClick={() => setDatesOpen(false)}>Done</button>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
       <div className="search-divider" />
-      <SearchField icon={<Calendar size={16} />} label="Check out">
-        <input
-          className="search-field-input" type="date" min={checkIn || todayISO()}
-          value={checkOut} onChange={e => setCheckOut(e.target.value)}
-        />
-      </SearchField>
-      <div className="search-divider" />
-      <SearchField icon={<Users size={16} />} label="Guests">
-        <input
-          className="search-field-input" type="number" min={1} placeholder="Add guests"
-          value={guests} onChange={e => setGuests(e.target.value)}
-        />
-      </SearchField>
+
+      <div style={{ position: 'relative', display: 'flex', flex: '1 1 0' }}>
+        <SearchField icon={<Users size={16} />} label="Guests">
+          <button type="button" className={`search-field-button${guests ? '' : ' is-placeholder'}`} onClick={openGuests}>
+            {guests ? `${guests} guest${Number(guests) === 1 ? '' : 's'}` : 'Add guests'}
+          </button>
+        </SearchField>
+
+        {guestsOpen && (
+          <>
+            <div onClick={() => setGuestsOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 40 }} />
+            <div className="search-popover guests">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: 14.5, fontWeight: 600, color: '#111827' }}>Guests</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                  <button
+                    type="button" className="stepper-btn" aria-label="Fewer guests"
+                    disabled={!guests || Number(guests) <= 1}
+                    onClick={() => setGuests(g => String(Math.max(1, Number(g || 1) - 1)))}
+                  >−</button>
+                  <span style={{ minWidth: 16, textAlign: 'center', fontSize: 14.5, fontWeight: 700, color: '#111827' }}>
+                    {guests || 1}
+                  </span>
+                  <button
+                    type="button" className="stepper-btn" aria-label="More guests"
+                    onClick={() => setGuests(g => String(Number(g || 1) + 1))}
+                  >+</button>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
 
       <div style={{ display: 'flex', alignItems: 'center', padding: '4px' }}>
         <button type="submit" className="btn btn-primary" style={{
@@ -71,7 +118,7 @@ export default function SearchBar() {
   )
 }
 
-function SearchField({ icon, label, children }: { icon: React.ReactNode; label: string; children: React.ReactNode }) {
+function SearchField({ icon, label, children }: { icon: ReactNode; label: string; children: ReactNode }) {
   return (
     <div className="search-field">
       <span className="search-field-label">{icon} {label}</span>

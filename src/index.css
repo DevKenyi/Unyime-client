@@ -453,7 +453,32 @@ label {
   width: 100%;
 }
 .search-field-input::placeholder { color: #9CA3AF; }
+.search-field-button {
+  border: none; outline: none; background: transparent; text-align: left; cursor: pointer;
+  font-size: 14.5px; font-family: inherit; color: #111827; padding: 0; width: 100%;
+}
+.search-field-button.is-placeholder { color: #9CA3AF; }
 .search-divider { width: 1px; background: #E5E7EB; margin: 8px 0; flex-shrink: 0; }
+
+.search-popover {
+  position: absolute; top: calc(100% + 10px); left: 0; z-index: 50;
+  background: #fff; border: 1px solid #E5E7EB; border-radius: 16px;
+  box-shadow: 0 24px 48px -20px rgba(17,24,39,0.28);
+  padding: 20px; max-width: calc(100vw - 40px);
+}
+.search-popover.dates { min-width: 320px; overflow-x: auto; }
+.search-popover.guests { min-width: 240px; }
+@media (min-width: 860px) {
+  .search-popover.dates { min-width: 640px; }
+}
+
+.stepper-btn {
+  width: 30px; height: 30px; border-radius: 50%; border: 1px solid #D1D5DB; background: #fff;
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+  font-size: 17px; line-height: 1; color: #374151; transition: border-color 0.15s, color 0.15s;
+}
+.stepper-btn:hover:not(:disabled) { border-color: #095C46; color: #095C46; }
+.stepper-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
 @media (min-width: 860px) {
   .search-panel { flex-direction: row; }
