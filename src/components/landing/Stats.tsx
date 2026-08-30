@@ -1,9 +1,9 @@
 import Reveal from './Reveal'
 
 const STATS = [
-  { value: '1,000+', label: 'Guests' },
-  { value: '250+', label: 'Verified stays' },
-  { value: '4.9/5', label: 'Average guest rating' },
+  { value: 'Verified', label: 'Every host ID-checked' },
+  { value: 'Secure', label: 'Payments via Flutterwave' },
+  { value: 'Direct', label: 'Payouts straight to host banks' },
   { value: 'Growing', label: 'Across Nigeria' },
 ]
 
