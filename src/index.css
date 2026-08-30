@@ -641,6 +641,21 @@ label {
   .sidebar-close-btn { display: none; }
 }
 
+/* ── Notification bell dropdown ──────────────────────────────── */
+/* position: fixed (not absolute) so it escapes the `overflow: hidden` on
+   DashboardLayout's main content column instead of being clipped by it,
+   and a z-index above .dashboard-sidebar's 50 so the mobile slide-in menu
+   never renders on top of it. */
+.notification-dropdown {
+  position: fixed; top: 64px; right: 16px; z-index: 200;
+  width: min(340px, calc(100vw - 32px)); max-height: 420px; overflow-y: auto;
+  background: #fff; border: 1px solid #E5E7EB; border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+}
+@media (min-width: 768px) {
+  .notification-dropdown { right: 24px; }
+}
+
 /* ── Listing wizard ───────────────────────────────────────── */
 .wizard-layout { display: grid; grid-template-columns: 1fr; gap: 24px; align-items: start; }
 .wizard-preview-pane { display: none; }

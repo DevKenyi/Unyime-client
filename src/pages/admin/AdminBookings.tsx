@@ -6,6 +6,10 @@ import StatusPill from '../../components/StatusPill'
 import { formatMoney } from '../../utils/currency'
 import type { Booking } from '../../types'
 
+function todayISO() {
+  return new Date().toISOString().split('T')[0]
+}
+
 export default function AdminBookings() {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [loading, setLoading] = useState(true)
@@ -67,7 +71,15 @@ export default function AdminBookings() {
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <span style={{ fontSize: 14, fontWeight: 700, color: '#095C46' }}>{formatMoney(b.total, b.currency)}</span>
-                    <StatusPill status={b.status} />
+                    {b.status === 'CONFIRMED' ? (
+                      b.checkInDate < todayISO() ? (
+                        <span className="status-pill status-pending"><span className="status-dot" />Check-in overdue</span>
+                      ) : (
+                        <span className="status-pill status-paid"><span className="status-dot" />Pending check-in</span>
+                      )
+                    ) : (
+                      <StatusPill status={b.status} />
+                    )}
                   </div>
                 </div>
 
