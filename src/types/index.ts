@@ -22,6 +22,9 @@ export interface PropertyPhoto {
 export interface Property {
   id: string
   ownerId: string
+  /** Admin-only — populated on /api/admin/properties* responses, absent everywhere else
+   * (public search/detail) to avoid exposing a host's email address to anonymous visitors. */
+  ownerEmail?: string
   title: string
   slug: string
   description: string | null

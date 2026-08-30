@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { MapPin } from 'lucide-react'
+import { MapPin, User } from 'lucide-react'
 import DashboardLayout from '../../components/DashboardLayout'
 import api from '../../api/axios'
 import { formatMoney } from '../../utils/currency'
@@ -12,12 +12,31 @@ const STATUS_CFG: Record<PropertyStatus, { label: string; cls: string }> = {
   REJECTED: { label: 'Rejected',       cls: 'status-cancelled' },
 }
 
+interface HostGroup {
+  ownerId: string
+  ownerEmail: string
+  properties: Property[]
+}
+
 export default function AdminProperties() {
   const [pending, setPending] = useState<Property[]>([])
   const [all, setAll] = useState<Property[]>([])
   const [loading, setLoading] = useState(true)
   const [busyId, setBusyId] = useState<string | null>(null)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [hostFilter, setHostFilter] = useState('')
+
+  const hostGroups = useMemo<HostGroup[]>(() => {
+    const groups = new Map<string, HostGroup>()
+    for (const p of all) {
+      const email = p.ownerEmail ?? 'Unknown host'
+      if (!groups.has(p.ownerId)) groups.set(p.ownerId, { ownerId: p.ownerId, ownerEmail: email, properties: [] })
+      groups.get(p.ownerId)!.properties.push(p)
+    }
+    const list = Array.from(groups.values()).sort((a, b) => a.ownerEmail.localeCompare(b.ownerEmail))
+    const q = hostFilter.trim().toLowerCase()
+    return q ? list.filter(g => g.ownerEmail.toLowerCase().includes(q)) : list
+  }, [all, hostFilter])
 
   const load = () => {
     setLoading(true)
@@ -82,6 +101,11 @@ export default function AdminProperties() {
                           <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: '#6B7280' }}>
                             <MapPin size={12} /> {p.city} · {formatMoney(p.pricePerNight, p.currency)}/night
                           </div>
+                          {p.ownerEmail && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12.5, color: '#095C46', marginTop: 3 }}>
+                              <User size={12} /> {p.ownerEmail}
+                            </div>
+                          )}
                         </div>
                         <div style={{ display: 'flex', gap: 8 }}>
                           <button className="btn btn-success btn-sm" disabled={busyId === p.id} onClick={() => decide(p.id, 'approve')}>Approve</button>
@@ -113,26 +137,53 @@ export default function AdminProperties() {
             )}
 
             <div>
-              <h2 style={{ fontSize: 15, fontWeight: 700, color: '#111827', margin: '20px 0 12px' }}>All properties ({all.length})</h2>
-              <div className="surface-card" style={{ padding: 0 }}>
-                {all.map((p, i) => (
-                  <div key={p.id} style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    padding: '12px 20px', borderBottom: i < all.length - 1 ? '1px solid #F3F4F6' : 'none', gap: 12, flexWrap: 'wrap',
-                  }}>
-                    <div>
-                      <p style={{ fontSize: 13.5, fontWeight: 600, color: '#111827', margin: 0 }}>{p.title}</p>
-                      <p style={{ fontSize: 12, color: '#9CA3AF', margin: '2px 0 0' }}>{p.city}</p>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, margin: '20px 0 12px' }}>
+                <h2 style={{ fontSize: 15, fontWeight: 700, color: '#111827', margin: 0 }}>
+                  All properties by host ({all.length} across {hostGroups.length} host{hostGroups.length === 1 ? '' : 's'})
+                </h2>
+                <input
+                  className="input" placeholder="Filter by host email…"
+                  value={hostFilter} onChange={e => setHostFilter(e.target.value)}
+                  style={{ maxWidth: 240 }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {hostGroups.map(group => (
+                  <div key={group.ownerId} className="surface-card" style={{ padding: 0, overflow: 'hidden' }}>
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px',
+                      background: '#F5F3EE', borderBottom: '1px solid #E5E7EB',
+                    }}>
+                      <User size={13} color="#095C46" />
+                      <span style={{ fontSize: 13.5, fontWeight: 700, color: '#095C46' }}>{group.ownerEmail}</span>
+                      <span style={{ fontSize: 12, color: '#9CA3AF' }}>· {group.properties.length} propert{group.properties.length === 1 ? 'y' : 'ies'}</span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <span className={`status-pill ${STATUS_CFG[p.status].cls}`}><span className="status-dot" />{STATUS_CFG[p.status].label}</span>
-                      {!p.isActive && <span className="status-pill status-cancelled"><span className="status-dot" />Inactive</span>}
-                      <button className="btn btn-secondary btn-sm" disabled={busyId === p.id} onClick={() => toggleActive(p.id)}>
-                        {p.isActive ? 'Deactivate' : 'Activate'}
-                      </button>
-                    </div>
+                    {group.properties.map((p, i) => (
+                      <div key={p.id} style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        padding: '12px 20px', borderBottom: i < group.properties.length - 1 ? '1px solid #F3F4F6' : 'none', gap: 12, flexWrap: 'wrap',
+                      }}>
+                        <div>
+                          <p style={{ fontSize: 13.5, fontWeight: 600, color: '#111827', margin: 0 }}>{p.title}</p>
+                          <p style={{ fontSize: 12, color: '#9CA3AF', margin: '2px 0 0' }}>{p.city}</p>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <span className={`status-pill ${STATUS_CFG[p.status].cls}`}><span className="status-dot" />{STATUS_CFG[p.status].label}</span>
+                          {!p.isActive && <span className="status-pill status-cancelled"><span className="status-dot" />Inactive</span>}
+                          <button className="btn btn-secondary btn-sm" disabled={busyId === p.id} onClick={() => toggleActive(p.id)}>
+                            {p.isActive ? 'Deactivate' : 'Activate'}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 ))}
+                {hostGroups.length === 0 && (
+                  <div className="surface-card" style={{ padding: 24, textAlign: 'center', color: '#9CA3AF', fontSize: 13.5 }}>
+                    No hosts match "{hostFilter}".
+                  </div>
+                )}
               </div>
             </div>
           </>
