@@ -1,10 +1,10 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { CheckCircle2, Plus, Trash2 } from 'lucide-react'
+import { CheckCircle2 } from 'lucide-react'
 import DashboardLayout from '../../components/DashboardLayout'
 import api from '../../api/axios'
 import { useCountry } from '../../contexts/CountryContext'
-import type { BlockedDate, Property, PropertyPhoto } from '../../types'
+import type { Property, PropertyPhoto } from '../../types'
 import { EMPTY_WIZARD_STATE, type WizardPhoto, type WizardState } from './property-wizard/wizardTypes'
 import ListingPreviewCard from './property-wizard/ListingPreviewCard'
 import StepAbout from './property-wizard/StepAbout'
@@ -12,6 +12,7 @@ import StepSpace from './property-wizard/StepSpace'
 import StepPhotos from './property-wizard/StepPhotos'
 import StepPricing from './property-wizard/StepPricing'
 import StepPreview from './property-wizard/StepPreview'
+import HostAvailabilityCalendar from './property-wizard/HostAvailabilityCalendar'
 
 const STEPS = ['About', 'Space & amenities', 'Photos', 'Pricing', 'Preview']
 
@@ -258,84 +259,8 @@ export default function HostPropertyForm() {
           </div>
         </div>
 
-        {isEdit && propertyId && <BlockedDatesManager propertyId={propertyId} />}
+        {isEdit && propertyId && <HostAvailabilityCalendar propertyId={propertyId} />}
       </div>
     </DashboardLayout>
-  )
-}
-
-function BlockedDatesManager({ propertyId }: { propertyId: string }) {
-  const [blocks, setBlocks] = useState<BlockedDate[]>([])
-  const [loading, setLoading] = useState(true)
-  const [startDate, setStartDate] = useState('')
-  const [endDate, setEndDate] = useState('')
-  const [reason, setReason] = useState('')
-  const [adding, setAdding] = useState(false)
-  const [error, setError] = useState('')
-
-  const load = () => {
-    setLoading(true)
-    api.get<BlockedDate[]>(`/api/host/properties/${propertyId}/blocked-dates`)
-      .then(({ data }) => setBlocks(data))
-      .finally(() => setLoading(false))
-  }
-
-  useEffect(load, [propertyId])
-
-  const addBlock = async (e: FormEvent) => {
-    e.preventDefault()
-    setAdding(true)
-    setError('')
-    try {
-      await api.post(`/api/host/properties/${propertyId}/blocked-dates`, { startDate, endDate, reason: reason || null })
-      setStartDate('')
-      setEndDate('')
-      setReason('')
-      load()
-    } catch (err: any) {
-      setError(err.response?.data?.error ?? 'Could not block these dates.')
-    } finally {
-      setAdding(false)
-    }
-  }
-
-  const removeBlock = async (blockId: string) => {
-    await api.delete(`/api/host/properties/${propertyId}/blocked-dates/${blockId}`)
-    setBlocks(prev => prev.filter(b => b.id !== blockId))
-  }
-
-  return (
-    <div className="surface-card" style={{ padding: 24 }}>
-      <h2 style={{ fontSize: 15, fontWeight: 700, color: '#111827', margin: '0 0 14px' }}>Blocked dates</h2>
-      <p style={{ fontSize: 13, color: '#6B7280', margin: '0 0 14px' }}>
-        Block dates for maintenance or personal use — these won't be bookable by guests.
-      </p>
-
-      {loading ? <span className="spinner spinner-dark" /> : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
-          {blocks.map(b => (
-            <div key={b.id} className="surface-muted" style={{ padding: '8px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: 13.5, color: '#374151' }}>
-                {b.startDate} → {b.endDate}{b.reason ? ` · ${b.reason}` : ''}
-              </span>
-              <button onClick={() => removeBlock(b.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#DC2626' }}>
-                <Trash2 size={14} />
-              </button>
-            </div>
-          ))}
-          {blocks.length === 0 && <p style={{ fontSize: 13, color: '#9CA3AF' }}>No blocked dates.</p>}
-        </div>
-      )}
-
-      <form onSubmit={addBlock} style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-end' }}>
-        <input type="date" className="input" required value={startDate} onChange={e => setStartDate(e.target.value)} style={{ flex: '1 1 140px' }} />
-        <input type="date" className="input" required value={endDate} onChange={e => setEndDate(e.target.value)} style={{ flex: '1 1 140px' }} />
-        <input className="input" placeholder="Reason (optional)" value={reason} onChange={e => setReason(e.target.value)} style={{ flex: '1 1 160px' }} />
-        <button type="submit" className="btn btn-secondary btn-md" disabled={adding}>
-          <Plus size={14} /> Block
-        </button>
-      </form>
-      {error && <p style={{ color: '#DC2626', fontSize: 13, marginTop: 10 }}>{error}</p>}
-    </div>
   )
 }

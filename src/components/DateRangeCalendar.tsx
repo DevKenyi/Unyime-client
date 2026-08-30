@@ -5,6 +5,43 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useMediaQuery } from '../hooks/useMediaQuery'
 import { getLatestValidCheckout, getOccupiedNightMatchers, type UnavailableRange } from '../utils/availability'
 
+/** Shared by every DayPicker instance in the app (this one and HostAvailabilityCalendar) so they
+ * all render with the exact same "uy-cal" skin — see the class doc comment below for why none of
+ * react-day-picker's own CSS is loaded. */
+export const UY_CAL_CLASSNAMES = {
+  root: 'uy-cal',
+  months: 'uy-cal-months',
+  month: 'uy-cal-month',
+  month_caption: 'uy-cal-caption',
+  caption_label: 'uy-cal-caption-label',
+  nav: 'uy-cal-nav',
+  button_previous: 'uy-cal-nav-btn uy-cal-nav-prev',
+  button_next: 'uy-cal-nav-btn uy-cal-nav-next',
+  month_grid: 'uy-cal-grid',
+  weekdays: 'uy-cal-weekdays',
+  weekday: 'uy-cal-weekday',
+  weeks: 'uy-cal-weeks',
+  week: 'uy-cal-week',
+  day: 'uy-cal-day',
+  day_button: 'uy-cal-day-btn',
+  today: 'uy-cal-today',
+  selected: 'uy-cal-selected',
+  range_start: 'uy-cal-range-start',
+  range_end: 'uy-cal-range-end',
+  range_middle: 'uy-cal-range-middle',
+  disabled: 'uy-cal-disabled',
+  outside: 'uy-cal-outside',
+  hidden: 'uy-cal-hidden',
+}
+
+export const UY_CAL_COMPONENTS = {
+  Chevron: ({ orientation, className, style }: { orientation?: string; className?: string; style?: React.CSSProperties }) => (
+    <span className={className} style={style}>
+      {orientation === 'left' ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
+    </span>
+  ),
+}
+
 interface Props {
   selected: DateRange | undefined
   onSelect: (range: DateRange | undefined) => void
@@ -42,38 +79,8 @@ export default function DateRangeCalendar({ selected, onSelect, unavailableRange
       onSelect={onSelect}
       disabled={disabled}
       navLayout="around"
-      classNames={{
-        root: 'uy-cal',
-        months: 'uy-cal-months',
-        month: 'uy-cal-month',
-        month_caption: 'uy-cal-caption',
-        caption_label: 'uy-cal-caption-label',
-        nav: 'uy-cal-nav',
-        button_previous: 'uy-cal-nav-btn uy-cal-nav-prev',
-        button_next: 'uy-cal-nav-btn uy-cal-nav-next',
-        month_grid: 'uy-cal-grid',
-        weekdays: 'uy-cal-weekdays',
-        weekday: 'uy-cal-weekday',
-        weeks: 'uy-cal-weeks',
-        week: 'uy-cal-week',
-        day: 'uy-cal-day',
-        day_button: 'uy-cal-day-btn',
-        today: 'uy-cal-today',
-        selected: 'uy-cal-selected',
-        range_start: 'uy-cal-range-start',
-        range_end: 'uy-cal-range-end',
-        range_middle: 'uy-cal-range-middle',
-        disabled: 'uy-cal-disabled',
-        outside: 'uy-cal-outside',
-        hidden: 'uy-cal-hidden',
-      }}
-      components={{
-        Chevron: ({ orientation, className, style }) => (
-          <span className={className} style={style}>
-            {orientation === 'left' ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
-          </span>
-        ),
-      }}
+      classNames={UY_CAL_CLASSNAMES}
+      components={UY_CAL_COMPONENTS}
     />
   )
 }

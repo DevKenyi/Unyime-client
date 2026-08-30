@@ -600,6 +600,19 @@ label {
 .uy-cal-disabled .uy-cal-day-btn { color: var(--color-border); text-decoration: line-through; cursor: not-allowed; }
 .uy-cal-disabled .uy-cal-day-btn:hover { background: none; }
 
+/* Host availability calendar — booked/blocked days are also `disabled` (can't be re-selected),
+   but should read as "occupied for a reason" rather than the plain grayed-out disabled look. */
+.uy-cal-day-booked .uy-cal-day-btn,
+.uy-cal-day-booked .uy-cal-day-btn:hover {
+  background: rgba(37,99,235,0.14); color: #1E40AF; font-weight: 600;
+  text-decoration: none; cursor: not-allowed;
+}
+.uy-cal-day-blocked .uy-cal-day-btn,
+.uy-cal-day-blocked .uy-cal-day-btn:hover {
+  background: rgba(217,119,6,0.16); color: #92400E; font-weight: 600;
+  text-decoration: none; cursor: not-allowed;
+}
+
 /* Middle-of-range days connect into one continuous band instead of separate circles. */
 .uy-cal-range-middle { background: var(--color-primary-tint); }
 .uy-cal-range-middle .uy-cal-day-btn { background: none; border-radius: 0; color: var(--color-primary); font-weight: 600; }
