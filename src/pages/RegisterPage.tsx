@@ -10,13 +10,19 @@ export default function RegisterPage() {
   const navigate = useNavigate()
   const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [showPass, setShowPass] = useState(false)
+  const [showConfirmPass, setShowConfirmPass] = useState(false)
   const [error, setError]       = useState('')
   const [loading, setLoading]   = useState(false)
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError('')
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.')
+      return
+    }
     setLoading(true)
     try {
       // Public self-registration only ever creates HOST accounts — admin accounts
@@ -108,6 +114,32 @@ export default function RegisterPage() {
                 style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', padding: 0, display: 'flex', alignItems: 'center' }}
               >
                 {showPass ? <EyeOff size={17} /> : <Eye size={17} />}
+              </button>
+            </div>
+          </div>
+
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: 8 }}>
+              Confirm password
+            </label>
+            <div style={{ position: 'relative' }}>
+              <Lock size={16} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
+              <input
+                type={showConfirmPass ? 'text' : 'password'} value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}
+                placeholder="Re-enter your password" autoComplete="new-password" required minLength={8}
+                style={{
+                  width: '100%', padding: '13px 48px 13px 44px', border: '1.5px solid #E5E7EB', borderRadius: 9999,
+                  fontSize: 15, fontFamily: 'inherit', background: '#fff', color: '#111827', outline: 'none',
+                  boxSizing: 'border-box', transition: 'border-color 0.15s, box-shadow 0.15s',
+                }}
+                onFocus={e => { e.target.style.borderColor = '#095C46'; e.target.style.boxShadow = '0 0 0 3px rgba(9,92,70,0.08)' }}
+                onBlur={e => { e.target.style.borderColor = '#E5E7EB'; e.target.style.boxShadow = 'none' }}
+              />
+              <button
+                type="button" onClick={() => setShowConfirmPass(s => !s)}
+                style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', padding: 0, display: 'flex', alignItems: 'center' }}
+              >
+                {showConfirmPass ? <EyeOff size={17} /> : <Eye size={17} />}
               </button>
             </div>
           </div>
