@@ -10,19 +10,31 @@ function todayISO() {
   return new Date().toISOString().split('T')[0]
 }
 
+const POLL_INTERVAL_MS = 30000
+
+function formatTime(iso: string) {
+  return new Date(iso).toLocaleString('en-NG', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+}
+
 export default function AdminBookings() {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [loading, setLoading] = useState(true)
   const [busyId, setBusyId] = useState<string | null>(null)
 
+  const refresh = () => api.get<Booking[]>('/api/admin/bookings').then(({ data }) => setBookings(data))
+
   const load = () => {
     setLoading(true)
-    api.get<Booking[]>('/api/admin/bookings')
-      .then(({ data }) => setBookings(data))
-      .finally(() => setLoading(false))
+    refresh().finally(() => setLoading(false))
   }
 
-  useEffect(load, [])
+  useEffect(() => {
+    load()
+    // Guests check in/out from their own tracker page — poll so those updates show up here
+    // without having to manually reload.
+    const interval = setInterval(refresh, POLL_INTERVAL_MS)
+    return () => clearInterval(interval)
+  }, [])
 
   const markRefunded = async (id: string) => {
     setBusyId(id)
@@ -82,6 +94,13 @@ export default function AdminBookings() {
                     )}
                   </div>
                 </div>
+
+                {(b.checkedInAt || b.checkedOutAt) && (
+                  <div style={{ display: 'flex', gap: 14, fontSize: 12, color: '#9CA3AF', marginTop: 6 }}>
+                    {b.checkedInAt && <span>Checked in {formatTime(b.checkedInAt)}</span>}
+                    {b.checkedOutAt && <span>Checked out {formatTime(b.checkedOutAt)}</span>}
+                  </div>
+                )}
 
                 {b.status === 'PENDING_PAYMENT' && (
                   <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 10 }}>

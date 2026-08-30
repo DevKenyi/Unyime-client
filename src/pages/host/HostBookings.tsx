@@ -14,19 +14,31 @@ const NEXT_STATUS: Partial<Record<BookingStatus, { label: string; status: Bookin
   PENDING_PAYMENT: [{ label: 'Cancel', status: 'CANCELLED' }],
 }
 
+const POLL_INTERVAL_MS = 30000
+
+function formatTime(iso: string) {
+  return new Date(iso).toLocaleString('en-NG', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+}
+
 export default function HostBookings() {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [loading, setLoading] = useState(true)
   const [busyId, setBusyId] = useState<string | null>(null)
 
+  const refresh = () => api.get<Booking[]>('/api/host/bookings').then(({ data }) => setBookings(data))
+
   const load = () => {
     setLoading(true)
-    api.get<Booking[]>('/api/host/bookings')
-      .then(({ data }) => setBookings(data))
-      .finally(() => setLoading(false))
+    refresh().finally(() => setLoading(false))
   }
 
-  useEffect(load, [])
+  useEffect(() => {
+    load()
+    // Guests check in/out from their own tracker page — poll so those updates show up here
+    // without the host having to manually reload.
+    const interval = setInterval(refresh, POLL_INTERVAL_MS)
+    return () => clearInterval(interval)
+  }, [])
 
   const updateStatus = async (bookingId: string, status: BookingStatus) => {
     setBusyId(bookingId)
@@ -76,6 +88,13 @@ export default function HostBookings() {
                     <StatusPill status={b.status} />
                   </div>
                 </div>
+
+                {(b.checkedInAt || b.checkedOutAt) && (
+                  <div style={{ display: 'flex', gap: 14, fontSize: 12, color: '#9CA3AF', marginTop: 6 }}>
+                    {b.checkedInAt && <span>Checked in {formatTime(b.checkedInAt)}</span>}
+                    {b.checkedOutAt && <span>Checked out {formatTime(b.checkedOutAt)}</span>}
+                  </div>
+                )}
 
                 {b.status === 'PENDING_PAYMENT' && b.expiresAt && (
                   <p style={{ fontSize: 12, color: '#92400E', margin: '8px 0 0' }}>

@@ -108,6 +108,7 @@ export interface Booking {
   status: BookingStatus
   createdAt: string
   paidAt: string | null
+  checkedInAt: string | null
   checkedOutAt: string | null
   refundStatus: RefundStatus
   refundedAt: string | null
