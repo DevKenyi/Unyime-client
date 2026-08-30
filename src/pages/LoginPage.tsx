@@ -127,9 +127,9 @@ export default function LoginPage() {
               }}>
                 Password
               </label>
-              <a href="#" style={{ fontSize: 13, color: '#095C46', textDecoration: 'none', fontWeight: 500 }}>
+              <Link to="/forgot-password" style={{ fontSize: 13, color: '#095C46', textDecoration: 'none', fontWeight: 500 }}>
                 Forgot?
-              </a>
+              </Link>
             </div>
             <div style={{ position: 'relative' }}>
               <Lock size={16} style={{

@@ -6,6 +6,8 @@ import ProtectedRoute from './components/ProtectedRoute'
 import LandingPage         from './pages/LandingPage'
 import LoginPage           from './pages/LoginPage'
 import RegisterPage        from './pages/RegisterPage'
+import ForgotPasswordPage  from './pages/ForgotPasswordPage'
+import ResetPasswordPage   from './pages/ResetPasswordPage'
 import DiscoverPage        from './pages/DiscoverPage'
 import PropertyDetailPage  from './pages/PropertyDetailPage'
 import BookingPage         from './pages/BookingPage'
@@ -41,6 +43,8 @@ export default function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/properties" element={<DiscoverPage />} />
           <Route path="/properties/:slug" element={<PropertyDetailPage />} />
           <Route path="/properties/:slug/book" element={<BookingPage />} />
