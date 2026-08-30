@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import api from '../api/axios'
 import { formatMoney } from '../utils/currency'
+import PhotoCarousel from '../components/PhotoCarousel'
 import type { Property, PropertyAvailability, Review } from '../types'
 
 const FALLBACK_IMAGE = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="800" height="500"%3E%3Crect width="800" height="500" fill="%23E8F5F1"/%3E%3C/svg%3E'
@@ -74,18 +75,8 @@ export default function PropertyDetailPage() {
 
       <main style={{ maxWidth: 1080, margin: '0 auto', padding: '24px 20px 60px' }}>
         {/* Photo gallery */}
-        <div
-          className={`photo-gallery-grid${photos.length > 1 ? ' has-secondary' : ''}`}
-          style={{ display: 'grid', gap: 8, borderRadius: 20, overflow: 'hidden', marginBottom: 24 }}
-        >
-          <div style={{ background: `url(${photos[0].imageUrl}) center/cover no-repeat` }} />
-          {photos.length > 1 && (
-            <div className="photo-gallery-secondary" style={{ gridTemplateRows: 'repeat(2, 1fr)', gap: 8 }}>
-              {photos.slice(1, 3).map(photo => (
-                <div key={photo.id} style={{ background: `url(${photo.imageUrl}) center/cover no-repeat` }} />
-              ))}
-            </div>
-          )}
+        <div style={{ marginBottom: 24 }}>
+          <PhotoCarousel photos={photos} />
         </div>
 
         <div className="detail-layout" style={{ display: 'grid', gap: 32 }}>
