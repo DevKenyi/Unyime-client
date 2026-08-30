@@ -220,6 +220,8 @@ export interface AdminPayout {
   flutterwaveTransferId: string | null
   flutterwaveReference: string | null
   failureReason: string | null
+  /** Set only when this payout was released via the unverified-payout escalation path. */
+  escalationReason: string | null
   paymentVerified: boolean
 }
 

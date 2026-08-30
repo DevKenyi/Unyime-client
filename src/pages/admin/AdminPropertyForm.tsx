@@ -39,6 +39,7 @@ export default function AdminPropertyForm() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [submitted, setSubmitted] = useState(false)
+  const [createdStatus, setCreatedStatus] = useState<Property['status'] | null>(null)
 
   useEffect(() => {
     api.get<AdminUser[]>('/api/admin/users')
@@ -95,6 +96,7 @@ export default function AdminPropertyForm() {
       await Promise.all(state.photos.map((photo, index) =>
         api.post(`/api/admin/properties/${data.id}/photos`, { imageUrl: photo.url, caption: photo.caption || null, sortOrder: index })
       ))
+      setCreatedStatus(data.status)
       setSubmitted(true)
     } catch (err: any) {
       setError(err.response?.data?.error ?? 'Could not create this property.')
@@ -121,9 +123,13 @@ export default function AdminPropertyForm() {
             }}>
               <CheckCircle2 size={28} />
             </div>
-            <h1 style={{ fontSize: 19, fontWeight: 800, color: '#111827', margin: '0 0 8px' }}>Property created and live</h1>
+            <h1 style={{ fontSize: 19, fontWeight: 800, color: '#111827', margin: '0 0 8px' }}>
+              {createdStatus === 'APPROVED' ? 'Property created and live' : 'Property created — pending host verification'}
+            </h1>
             <p style={{ fontSize: 14, color: '#6B7280', margin: '0 0 20px', lineHeight: 1.6 }}>
-              This listing was created by an admin, so it's already approved and visible in search — no review needed.
+              {createdStatus === 'APPROVED'
+                ? "This listing was created by an admin, so it's already approved and visible in search — no review needed."
+                : "This host hasn't completed identity verification yet, so this listing is saved as Pending — it'll need approving from the Properties page once their KYC clears."}
             </p>
             <div style={{ marginTop: 20 }}>
               <button className="btn btn-primary btn-md" onClick={() => navigate('/admin/properties')}>Done</button>

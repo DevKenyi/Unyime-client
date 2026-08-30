@@ -200,6 +200,11 @@ export default function AdminPayouts() {
                   {p.payoutStatus === 'FAILED' && p.failureReason && (
                     <p style={{ fontSize: 12.5, color: '#DC2626', margin: '8px 0 0' }}>Transfer failed: {p.failureReason}</p>
                   )}
+                  {p.escalationReason && (
+                    <p style={{ fontSize: 12.5, color: '#9A6B00', margin: '8px 0 0' }}>
+                      Released without Flutterwave verification — {p.escalationReason}
+                    </p>
+                  )}
 
                   <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
                     {p.payoutStatus === 'ELIGIBLE' && p.paymentVerified && (
