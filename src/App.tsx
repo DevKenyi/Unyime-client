@@ -8,6 +8,7 @@ import LoginPage           from './pages/LoginPage'
 import RegisterPage        from './pages/RegisterPage'
 import ForgotPasswordPage  from './pages/ForgotPasswordPage'
 import ResetPasswordPage   from './pages/ResetPasswordPage'
+import AcceptAdminInvitePage from './pages/AcceptAdminInvitePage'
 import DiscoverPage        from './pages/DiscoverPage'
 import PropertyDetailPage  from './pages/PropertyDetailPage'
 import BookingPage         from './pages/BookingPage'
@@ -45,6 +46,7 @@ export default function App() {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/accept-admin-invite" element={<AcceptAdminInvitePage />} />
           <Route path="/properties" element={<DiscoverPage />} />
           <Route path="/properties/:slug" element={<PropertyDetailPage />} />
           <Route path="/properties/:slug/book" element={<BookingPage />} />
@@ -99,7 +101,7 @@ export default function App() {
           {/* Admin dashboard */}
           <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
           <Route path="/admin/dashboard" element={
-            <ProtectedRoute allowedRoles={['ADMIN']}>
+            <ProtectedRoute allowedRoles={['ADMIN', 'SUB_ADMIN']}>
               <AdminDashboard />
             </ProtectedRoute>
           } />
@@ -109,7 +111,7 @@ export default function App() {
             </ProtectedRoute>
           } />
           <Route path="/admin/properties" element={
-            <ProtectedRoute allowedRoles={['ADMIN']}>
+            <ProtectedRoute allowedRoles={['ADMIN', 'SUB_ADMIN']}>
               <AdminProperties />
             </ProtectedRoute>
           } />
@@ -119,7 +121,7 @@ export default function App() {
             </ProtectedRoute>
           } />
           <Route path="/admin/kyc" element={
-            <ProtectedRoute allowedRoles={['ADMIN']}>
+            <ProtectedRoute allowedRoles={['ADMIN', 'SUB_ADMIN']}>
               <AdminKyc />
             </ProtectedRoute>
           } />

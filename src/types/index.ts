@@ -1,4 +1,4 @@
-export type Role = 'ADMIN' | 'HOST' | 'GUEST'
+export type Role = 'ADMIN' | 'SUB_ADMIN' | 'HOST' | 'GUEST'
 
 export interface AuthUser {
   token: string

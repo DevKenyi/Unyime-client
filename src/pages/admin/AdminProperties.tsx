@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { MapPin, User } from 'lucide-react'
 import DashboardLayout from '../../components/DashboardLayout'
 import api from '../../api/axios'
+import { useAuth } from '../../contexts/AuthContext'
 import { formatMoney } from '../../utils/currency'
 import type { Property, PropertyStatus } from '../../types'
 
@@ -19,6 +20,8 @@ interface HostGroup {
 }
 
 export default function AdminProperties() {
+  const { user } = useAuth()
+  const isFullAdmin = user?.role === 'ADMIN'
   const [pending, setPending] = useState<Property[]>([])
   const [all, setAll] = useState<Property[]>([])
   const [loading, setLoading] = useState(true)
@@ -82,7 +85,7 @@ export default function AdminProperties() {
             <h1 className="page-title">Properties</h1>
             <p className="page-subtitle">Review new listings and manage all properties.</p>
           </div>
-          <Link to="/admin/properties/new" className="btn btn-primary btn-md">Add property</Link>
+          {isFullAdmin && <Link to="/admin/properties/new" className="btn btn-primary btn-md">Add property</Link>}
         </div>
 
         {loading && <div style={{ textAlign: 'center', padding: '60px 0' }}><span className="spinner spinner-dark" /></div>}
@@ -171,9 +174,11 @@ export default function AdminProperties() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                           <span className={`status-pill ${STATUS_CFG[p.status].cls}`}><span className="status-dot" />{STATUS_CFG[p.status].label}</span>
                           {!p.isActive && <span className="status-pill status-cancelled"><span className="status-dot" />Inactive</span>}
-                          <button className="btn btn-secondary btn-sm" disabled={busyId === p.id} onClick={() => toggleActive(p.id)}>
-                            {p.isActive ? 'Deactivate' : 'Activate'}
-                          </button>
+                          {isFullAdmin && (
+                            <button className="btn btn-secondary btn-sm" disabled={busyId === p.id} onClick={() => toggleActive(p.id)}>
+                              {p.isActive ? 'Deactivate' : 'Activate'}
+                            </button>
+                          )}
                         </div>
                       </div>
                     ))}

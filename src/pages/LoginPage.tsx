@@ -21,7 +21,7 @@ export default function LoginPage() {
     try {
       const { data } = await api.post<AuthUser>('/api/auth/login', { email, password })
       login(data)
-      if (data.role === 'ADMIN') navigate('/admin/dashboard')
+      if (data.role === 'ADMIN' || data.role === 'SUB_ADMIN') navigate('/admin/dashboard')
       else navigate('/host/dashboard')
     } catch (err: any) {
       setError(err.response?.data?.error ?? 'Invalid email or password')

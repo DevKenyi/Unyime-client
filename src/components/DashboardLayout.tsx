@@ -28,13 +28,22 @@ const ADMIN_NAV: NavItem[] = [
   { label: 'Payouts',     to: '/admin/payouts',    icon: <Banknote size={17} /> },
 ]
 
+/** A SUB_ADMIN can only reach dashboard/revenue and host-approval routes — see AdminController's
+ * per-method @PreAuthorize overrides. Everything else in ADMIN_NAV would just bounce them back to
+ * /login via ProtectedRoute, so it's left out here rather than shown as a dead link. */
+const SUB_ADMIN_NAV: NavItem[] = [
+  { label: 'Dashboard',  to: '/admin/dashboard',  icon: <LayoutDashboard size={17} /> },
+  { label: 'Properties', to: '/admin/properties', icon: <Home size={17} /> },
+  { label: 'Host verification', to: '/admin/kyc', icon: <ShieldCheck size={17} /> },
+]
+
 interface Props { children: ReactNode }
 
 export default function DashboardLayout({ children }: Props) {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const nav = user?.role === 'ADMIN' ? ADMIN_NAV : HOST_NAV
+  const nav = user?.role === 'ADMIN' ? ADMIN_NAV : user?.role === 'SUB_ADMIN' ? SUB_ADMIN_NAV : HOST_NAV
 
   const handleLogout = () => { logout(); navigate('/login') }
 
@@ -63,7 +72,7 @@ export default function DashboardLayout({ children }: Props) {
           </button>
         </div>
         <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 6, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>
-          {user?.role === 'ADMIN' ? 'Admin Portal' : 'Host Portal'}
+          {user?.role === 'HOST' ? 'Host Portal' : 'Admin Portal'}
         </p>
       </div>
 
