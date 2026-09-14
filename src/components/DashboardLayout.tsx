@@ -139,7 +139,6 @@ export default function DashboardLayout({ children }: Props) {
           background: '#FFFFFF',
           borderRight: '1px solid #E5E7EB',
           top: 0,
-          height: '100vh',
           overflowY: 'auto',
         }}
       >

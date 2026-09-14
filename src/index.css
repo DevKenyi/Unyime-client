@@ -640,6 +640,12 @@ label {
 .dashboard-menu-trigger { display: flex; }
 .dashboard-sidebar {
   position: fixed; inset: 0 auto 0 0; z-index: 50;
+  /* dvh accounts for the mobile browser chrome (address bar) that vh ignores — without it, a
+     phone's collapsed toolbar leaves the sidebar taller than the visible screen, pushing the
+     Sign out button below the fold until the user scrolls the sidebar itself. vh first as a
+     fallback for browsers that don't support dvh. */
+  height: 100vh;
+  height: 100dvh;
   transform: translateX(-100%);
   transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
