@@ -132,12 +132,12 @@ export default function HostProperties() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {properties.map(p => (
               <div key={p.id} className="surface-card" style={{ padding: 16 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
                 <div style={{
                   width: 64, height: 64, borderRadius: 10, flexShrink: 0,
                   background: p.coverImageUrl ? `url(${p.coverImageUrl}) center/cover no-repeat` : '#E8F5F1',
                 }} />
-                <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ flex: 1, minWidth: 200 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                     <Link to={`/host/properties/${p.id}/edit`} style={{ fontSize: 14.5, fontWeight: 700, color: '#111827', textDecoration: 'none' }}>
                       {p.title}
@@ -156,7 +156,7 @@ export default function HostProperties() {
                     <MapPin size={12} /> {p.city} · {formatMoney(p.pricePerNight, p.currency)}/night
                   </div>
                 </div>
-                <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', flexShrink: 0, marginLeft: 'auto' }}>
                   <button className="btn btn-secondary btn-sm" onClick={() => toggleSettings(p.id)}>
                     <Sparkles size={13} /> Cleaning settings
                   </button>
